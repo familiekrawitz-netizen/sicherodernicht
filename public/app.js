@@ -1,5 +1,32 @@
+const CONSENT_KEY = 'am-i-safe-consent-v1';
+
+function storedConsent() {
+  try {
+    return JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function hasComfortConsent() {
+  return storedConsent()?.comfort === true;
+}
+
+function cleanupComfortStorage() {
+  localStorage.removeItem('am-i-safe-language');
+  localStorage.removeItem('am-i-safe-share-company-location');
+  localStorage.removeItem('am-i-safe-login-code');
+  localStorage.removeItem('am-i-safe-login-pin');
+}
+
+function rememberComfortValue(key, value) {
+  if (hasComfortConsent()) {
+    localStorage.setItem(key, value);
+  }
+}
+
 const state = {
-  language: localStorage.getItem('am-i-safe-language') || 'de',
+  language: hasComfortConsent() ? localStorage.getItem('am-i-safe-language') || 'de' : 'de',
   userPos: null,
   token: sessionStorage.getItem('am-i-safe-token') || '',
   user: null,
@@ -16,7 +43,7 @@ const state = {
   tickerItems: [],
   legendFilter: null,
   currentAlertIndex: -1,
-  shareCompanyLocation: localStorage.getItem('am-i-safe-share-company-location') !== 'off'
+  shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('am-i-safe-share-company-location') !== 'off' : true
 };
 
 const texts = {
@@ -334,12 +361,45 @@ const alertStrip = document.getElementById('alertStrip');
 const companyTicker = document.getElementById('companyTicker');
 const mapPanel = document.querySelector('.map-panel');
 const reportTicker = document.getElementById('reportTicker');
+const consentBanner = document.getElementById('consentBanner');
+const comfortConsentInput = document.getElementById('comfortConsentInput');
+const necessaryConsentBtn = document.getElementById('necessaryConsentBtn');
+const saveConsentBtn = document.getElementById('saveConsentBtn');
+const acceptComfortBtn = document.getElementById('acceptComfortBtn');
+const cookieSettingsBtn = document.getElementById('cookieSettingsBtn');
 
 const viewOptions = ['today', 'week', 'month', 'year'];
 
 function t(key) {
   const lang = texts[state.language];
   return key.split('.').reduce((value, part) => value && value[part], lang) || key;
+}
+
+function showConsentBanner(force = false) {
+  const consent = storedConsent();
+  if (!force && consent) return;
+  comfortConsentInput.checked = consent?.comfort === true;
+  consentBanner.classList.remove('hidden');
+}
+
+function saveConsent(comfort) {
+  localStorage.setItem(CONSENT_KEY, JSON.stringify({
+    necessary: true,
+    comfort,
+    savedAt: new Date().toISOString()
+  }));
+
+  if (!comfort) {
+    cleanupComfortStorage();
+    state.language = 'de';
+    state.shareCompanyLocation = true;
+  } else {
+    rememberComfortValue('am-i-safe-language', state.language);
+    rememberComfortValue('am-i-safe-share-company-location', state.shareCompanyLocation ? 'on' : 'off');
+  }
+
+  consentBanner.classList.add('hidden');
+  updateTranslations();
 }
 
 function scoreColor(score) {
@@ -479,7 +539,7 @@ function updateDangerButtonState() {
 
 async function toggleCompanyLocationSharing() {
   state.shareCompanyLocation = !state.shareCompanyLocation;
-  localStorage.setItem('am-i-safe-share-company-location', state.shareCompanyLocation ? 'on' : 'off');
+  rememberComfortValue('am-i-safe-share-company-location', state.shareCompanyLocation ? 'on' : 'off');
   renderAuthPanel();
 
   if (!state.shareCompanyLocation && state.token) {
@@ -608,8 +668,8 @@ function renderLoginPopover() {
     return;
   }
 
-  const savedCode = localStorage.getItem('am-i-safe-login-code') || '';
-  const savedPin = localStorage.getItem('am-i-safe-login-pin') || '';
+  const savedCode = hasComfortConsent() ? localStorage.getItem('am-i-safe-login-code') || '' : '';
+  const savedPin = hasComfortConsent() ? localStorage.getItem('am-i-safe-login-pin') || '' : '';
   const hasSavedLogin = Boolean(savedCode || savedPin);
 
   loginPopover.innerHTML = `
@@ -1257,7 +1317,7 @@ async function submitLogin() {
     state.token = payload.token;
     sessionStorage.setItem('am-i-safe-token', state.token);
     localStorage.removeItem('am-i-safe-token');
-    if (rememberInput?.checked) {
+    if (rememberInput?.checked && hasComfortConsent()) {
       localStorage.setItem('am-i-safe-login-code', code);
       localStorage.setItem('am-i-safe-login-pin', pin);
     } else {
@@ -1401,7 +1461,7 @@ function startPolling() {
 
 function toggleLanguage() {
   state.language = state.language === 'de' ? 'en' : 'de';
-  localStorage.setItem('am-i-safe-language', state.language);
+  rememberComfortValue('am-i-safe-language', state.language);
   updateTranslations();
   renderMap();
 }
@@ -1532,6 +1592,10 @@ window.addEventListener('resize', () => {
 window.addEventListener('pagehide', logoutOnAppClose);
 
 languageToggle.addEventListener('click', toggleLanguage);
+cookieSettingsBtn.addEventListener('click', () => showConsentBanner(true));
+necessaryConsentBtn.addEventListener('click', () => saveConsent(false));
+saveConsentBtn.addEventListener('click', () => saveConsent(comfortConsentInput.checked));
+acceptComfortBtn.addEventListener('click', () => saveConsent(true));
 locateBtn.addEventListener('click', locateMe);
 currentAlertsBtn.addEventListener('click', focusNextCurrentAlert);
 mainDangerBtn.addEventListener('click', () => {
@@ -1566,6 +1630,7 @@ loginButton.addEventListener('click', () => {
 });
 
 async function bootstrap() {
+  showConsentBanner();
   const bootstrapData = await api('/api/bootstrap');
   state.mapData = { companies: bootstrapData.companies, emergencyPlaces: bootstrapData.emergencyPlaces, cells: [], alerts: [], funReports: [] };
   updateTranslations();

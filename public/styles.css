@@ -1391,6 +1391,7 @@ a:hover {
 .footer-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
@@ -1398,6 +1399,63 @@ a:hover {
   background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   text-decoration: none;
+}
+
+.footer-button {
+  cursor: pointer;
+}
+
+.consent-banner {
+  position: fixed;
+  inset: auto 14px 14px;
+  z-index: 3000;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.consent-card {
+  width: min(760px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(8, 17, 32, 0.94);
+  color: var(--text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
+}
+
+.consent-card p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.consent-options,
+.consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.consent-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 800;
+}
+
+.candy-consent {
+  background: linear-gradient(135deg, #14b8a6, #3b82f6);
 }
 
 .legal-footer {
@@ -1682,6 +1740,18 @@ a:hover {
 
   .site-footer {
     display: grid;
+  }
+
+  .consent-banner {
+    inset: auto 10px 10px;
+  }
+
+  .consent-card {
+    padding: 14px;
+  }
+
+  .consent-actions button {
+    width: 100%;
   }
 
   .admin-row {
