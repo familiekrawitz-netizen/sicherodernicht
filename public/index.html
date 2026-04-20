@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="am-I-safe" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>am-I-safe</title>
+    <link rel="manifest" href="/manifest.json?v=46" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="/styles.css?v=46" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar compact-topbar">
+        <div class="brand-block">
+          <p class="eyebrow subtle-eyebrow">Privacy-first neighbourhood map</p>
+          <h1>am-I-safe</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="languageToggle" class="ghost-button language-toggle topbar-button" type="button" aria-label="Sprache wechseln">
+            <span>🇩🇪</span>
+            <span>DE</span>
+          </button>
+          <button id="loginButton" class="ghost-button topbar-button login-chip" type="button">Login</button>
+        </div>
+      </header>
+      <div id="loginPopover" class="login-popover hidden"></div>
+
+      <main class="layout">
+        <section class="primary-column">
+          <section class="hero-card glass">
+            <div id="viewSwitcher" class="view-switcher" aria-label="Zeitraum"></div>
+            <h2 data-i18n="heroTitle">Bin ich hier sicher? Wo ist es schön?</h2>
+            <p class="hero-copy" data-i18n="heroCopy">
+              Bewertungen werden nur auf 100 Meter gerundet gespeichert. Offentliche Meldungen bleiben anonym, Missbrauch wird serverseitig gebremst.
+            </p>
+
+            <div class="toolbar">
+              <button id="locateBtn" class="primary-button" type="button" data-i18n="locateMe">Ich bin hier</button>
+              <button id="currentAlertsBtn" class="current-alerts-button hidden" type="button">0 aktuelle Meldungen</button>
+            </div>
+
+            <section class="map-panel compact-map">
+              <div id="alertStrip" class="alert-strip hidden"></div>
+              <div class="ticker-wrap">
+                <a id="companyTicker" href="/sicherheit.html" class="company-ticker" aria-label="Sicherheitsunternehmen"></a>
+              </div>
+              <div id="map"></div>
+              <div class="map-overlay top-right">
+                <button id="centerMapBtn" class="ghost-button tiny" type="button" data-i18n="centerMap">Zentrieren</button>
+              </div>
+            </section>
+
+            <div class="rating-card">
+              <div class="rating-header">
+                <div>
+                  <span class="label" data-i18n="quickRate">Schnell bewerten</span>
+                  <div class="rating-tools">
+                    <button id="funToggle" class="toggle-pill" type="button" data-i18n="funMode">Spaß gehabt?</button>
+                  </div>
+                </div>
+              </div>
+              <div id="ratingButtons" class="rating-buttons"></div>
+              <div class="danger-row">
+                <button id="mainDangerBtn" class="score-button score-6 is-locked score-button-stack" type="button">
+                  <span class="score-main">6</span>
+                  <span class="score-sub" data-i18n="dangerButton">aktuelle Gefahr</span>
+                  <span class="score-note" data-i18n="dangerOnly">Nur für registrierte Nutzer</span>
+                </button>
+              </div>
+              <div id="funButtons" class="fun-buttons hidden"></div>
+            </div>
+
+            <div class="toolbar compact">
+              <button id="emergencyToggle" class="warn-button" type="button" data-i18n="emergency">Notfall</button>
+              <span class="inline-emergency-stack">
+                <span class="inline-emergency-top" data-i18n="emergencyInfo">Nur für registrierte Nutzer</span>
+                <span class="inline-emergency-bottom" data-i18n="emergencyCall">Bei akuter Gefahr 110 anrufen</span>
+              </span>
+              <a class="outline-button" href="/sicherheit.html" data-i18n="needSecurity">Ich brauche mehr Sicherheit</a>
+            </div>
+
+            <form id="searchForm" class="search-form">
+              <input id="searchInput" type="search" autocomplete="off" spellcheck="false" />
+              <button class="ghost-button" type="submit" data-i18n="search">Suchen</button>
+            </form>
+            <div id="searchResults" class="search-results"></div>
+
+            <p id="submitStatus" class="status-line"></p>
+          </section>
+        </section>
+
+        <aside class="sidebar">
+          <section class="panel-card">
+            <div class="panel-head">
+              <h3 data-i18n="orientation">Aktuelle Meldungen</h3>
+              <span class="mini-dot"></span>
+            </div>
+            <div id="reportTicker" class="report-ticker hidden"></div>
+            <div class="divider"></div>
+            <div class="legend-list" id="legendList"></div>
+            <div class="divider"></div>
+            <div id="areaSummary" class="area-summary"></div>
+          </section>
+
+          <section id="registeredPanel" class="panel-card hidden">
+            <button id="logoutButton" class="text-button hidden" type="button" data-i18n="logout">Logout</button>
+            <div id="authPanel" class="auth-panel"></div>
+            <div id="companyPanel" class="company-panel hidden"></div>
+          </section>
+
+          <section class="ad-slot">
+            <span class="ad-label">Anzeige</span>
+            <div class="ad-card">
+              <strong>Banner-Platzhalter</strong>
+              <p data-i18n="bannerCopy">Reservierter Bereich fur Partner oder Hinweise.</p>
+            </div>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="site-footer">
+        <a class="footer-link" href="/rechtliches.html">Impressum & Datenschutz</a>
+      </footer>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="/app.js?v=46"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+              registrations.forEach((registration) => registration.unregister());
+            });
+            return;
+          }
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>

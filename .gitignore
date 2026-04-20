@@ -1,0 +1,15 @@
+.DS_Store
+*.zip
+*.log
+node_modules/
+npm-debug.log*
+
+# Lokale Prototyp-Daten nicht versehentlich auf GitHub hochladen.
+data/store.json
+data/reports.json
+
+# Lokale Starter-Datei fuer den Mac.
+*.command
+
+# Alte Prototyp-Datei, die nicht fuer das Node/Render-Deployment gebraucht wird.
+server.rb

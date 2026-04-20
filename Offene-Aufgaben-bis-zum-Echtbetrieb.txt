@@ -1,0 +1,137 @@
+am-I-safe - Offene Aufgaben bis zum Echtbetrieb
+
+Stand: 20.04.2026
+
+Diese Liste sammelt die wichtigsten Aufgaben, bevor am-I-safe mit echten Nutzern oeffentlich betrieben werden sollte.
+Der aktuelle Stand ist ein lokaler Prototyp.
+
+1. Datenbank fuer den Echtbetrieb
+
+- Lokale JSON-Datei data/store.json durch eine echte Datenbank ersetzen.
+- Empfohlen: PostgreSQL.
+- Tabellen fuer anonyme Bewertungen, Fun-Meldungen, registrierte Alarmmeldungen, Nutzer, Firmen, Sessions und Audit-Logs anlegen.
+- Migration der bisherigen Daten aus data/store.json vorbereiten.
+- Backups einrichten.
+- Wiederherstellung aus Backup testen.
+- Exportfunktionen fuer JSON und CSV weiterfuehren.
+
+2. Datenschutz und Datenminimierung
+
+- Endgueltiges Datenschutzkonzept erstellen.
+- Pruefen, welche Daten dauerhaft gespeichert werden duerfen.
+- Oeffentliche anonyme Meldungen dauerhaft lagebildfaehig speichern.
+- Personenbezogene Daten registrierter Nutzer nur zweckgebunden speichern.
+- Speicherdauer fuer Nutzerkonten, Sessions, Standortdaten und Alarmmeldungen festlegen.
+- Loeschkonzept fuer Nutzerkonten und personenbezogene Daten ergaenzen.
+- Betroffenenrechte technisch abbilden: Auskunft, Berichtigung, Loeschung, Export.
+- Impressum und Datenschutzerklaerung mit echten Betreiberangaben ausfuellen.
+- Hosting-Anbieter und Kartenanbieter in der Datenschutzerklaerung konkret benennen.
+
+3. Sicherheit und Missbrauchsschutz
+
+- Demo-Login durch echtes Authentifizierungssystem ersetzen.
+- Passwoerter/PINs nicht im Klartext speichern, sondern sicher hashen.
+- Admin-Bereich mit echter Admin-Anmeldung schuetzen.
+- Rollenrechte hart serverseitig absichern: anonym, privat, firma, admin.
+- Schutz gegen massenhafte Fake-Bewertungen verbessern.
+- Rate-Limits und Abuse-Erkennung ausbauen.
+- Audit-Log fuer administrative Aenderungen einfuehren.
+- Sicherheitsrelevante Meldungen gegen Manipulation absichern.
+- HTTPS im Livebetrieb zwingend nutzen.
+- Sicherheitspruefung vor Veroeffentlichung durchfuehren.
+
+4. Admin-Verwaltung
+
+- Aktuelle lokale Admin-Seite public/admin.html produktionsreif machen.
+- Firmen anlegen, bearbeiten, deaktivieren statt sofort loeschen.
+- Nutzer anlegen, bearbeiten, deaktivieren.
+- Firmenlogos als echte Bilddateien oder sichere Uploads verwalten.
+- Zuweisung von Nutzern zu Firmen kontrollieren.
+- Admin-Aenderungen protokollieren: wer hat wann was geaendert.
+- CSV-Export fuer Firmen und Nutzer ergaenzen.
+
+5. Firmenfunktionen
+
+- Team-Standorte genauer definieren: wann sichtbar, fuer wen, wie lange.
+- Zustimmung der Firmennutzer zur Standortanzeige einholen.
+- Alarmton technisch und rechtlich pruefen.
+- Push-Benachrichtigungen fuer echte App-Version planen.
+- Firmeninterne Meldungen und firmenuebergreifende Warnungen klar trennen.
+- Firmenlogo-Anzeige bei Alarmmeldungen verfeinern.
+- Meldetypen pruefen und ggf. erweitern: Schusswaffe, Messer, Gewalt, Mob.
+
+6. Karten und Standortdaten
+
+- Kartenanbieter fuer Echtbetrieb festlegen.
+- Pruefen, ob OpenStreetMap-Tiles direkt genutzt werden duerfen oder eigener Tile-Anbieter noetig ist.
+- Geocoding fuer Ortssuche datenschutzkonform absichern.
+- Rueckwaertssuche fuer Strassennamen sauber einbauen, falls gewuenscht.
+- 100-Meter-Raster technisch dokumentieren.
+- Anzeige bei Zoomstufen weiter optimieren.
+- Barrierearme Bedienung auf mobilen Geraeten testen.
+
+7. Auswertung und Lagebild
+
+- Auswertungsseite fuer Lagebild erstellen.
+- Regionen mit hoher Belastung automatisch erkennen.
+- Regionen mit besonders positiven Erlebnissen automatisch erkennen.
+- Zeitfilter ergaenzen: 24 Stunden, 7 Tage, Monat, Jahr, mehrere Jahre.
+- Heatmaps oder Clusteransichten pruefen.
+- Export der Auswertungen als CSV und spaeter PDF ermoeglichen.
+- Datenschutzfreundliche Aggregation sicherstellen.
+
+8. Betrieb und Hosting
+
+- Hosting-Plattform auswaehlen, z. B. Render, Railway oder eigener Server.
+- Produktionsdatenbank einrichten.
+- Umgebungsvariablen fuer Geheimnisse und Konfiguration verwenden.
+- Automatische Backups einrichten.
+- Monitoring fuer Serverfehler und Ausfaelle einrichten.
+- Logging datenschutzsparsam konfigurieren.
+- Eigene Domain und SSL-Zertifikat einrichten.
+- Deployment-Prozess dokumentieren.
+
+9. Progressive Web App und spaetere App
+
+- PWA-Manifest finalisieren.
+- App-Icons in mehreren Groessen erstellen.
+- Offline-Verhalten definieren.
+- Push-Benachrichtigungen vorbereiten.
+- Installation auf iPhone und Android testen.
+- Spaetere Verpackung als App pruefen, z. B. Capacitor oder React Native.
+
+10. Tests und Qualitaetssicherung
+
+- Automatisierte Tests fuer API-Endpunkte schreiben.
+- Tests fuer Rollenrechte: anonym, privat, firma, admin.
+- Tests fuer Missbrauchsschutz.
+- Tests fuer Exportfunktionen.
+- Mobile Ansicht auf iPhone und Android testen.
+- Browser testen: Safari, Chrome, Firefox.
+- Standortfreigabe und Fehlerfaelle testen.
+- Mehrere gleichzeitige Nutzer simulieren.
+
+11. Inhalte und Rechtliches
+
+- Echte Betreiberangaben im Impressum eintragen.
+- Datenschutzerklaerung finalisieren.
+- Nutzungsbedingungen erstellen.
+- Haftungsausschluss fuer Bewertungen und Alarmmeldungen formulieren.
+- Klarstellen, dass die App keinen Notruf ersetzt.
+- Hinweis auf 110 bei akuter Gefahr beibehalten.
+- Moderations- und Meldeprozess fuer falsche Inhalte entwickeln.
+
+12. Wichtige technische Entscheidung
+
+- Vor einem echten Livegang nicht mit der lokalen JSON-Datei arbeiten.
+- Vor einem echten Livegang keine Klartext-PINs verwenden.
+- Vor einem echten Livegang Admin-Funktionen nicht ungeschuetzt lassen.
+- Vor einem echten Livegang Standort- und Alarmdaten rechtlich pruefen lassen.
+
+Kurzempfehlung fuer die naechsten Schritte:
+
+1. Datenbank auf PostgreSQL umstellen.
+2. Echtes Login mit sicher gespeicherten Zugangsdaten bauen.
+3. Admin-Bereich absichern.
+4. Datenschutz- und Loeschkonzept finalisieren.
+5. Erst danach oeffentlich testen.

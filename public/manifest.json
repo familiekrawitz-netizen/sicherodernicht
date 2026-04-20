@@ -1,0 +1,11 @@
+{
+  "name": "am-I-safe",
+  "short_name": "am-I-safe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#081120",
+  "theme_color": "#0f172a",
+  "lang": "de",
+  "description": "Mobile-first Kartenwebapp fur datensparsame Standortbewertungen, Alarmmeldungen und Sicherheitsnavigation.",
+  "categories": ["navigation", "safety", "maps"]
+}

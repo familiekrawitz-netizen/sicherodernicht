@@ -1,0 +1,67 @@
+am-I-safe - Projekt-Ueberblick
+
+Projektordner:
+/Users/peterkrawitz/Documents/Web-App
+
+Wichtige Dateien:
+
+1. Start am-I-safe.command
+   Startet den lokalen Server per Doppelklick.
+
+2. server.js
+   Der lokale Server der Web-App.
+
+3. public/index.html
+   Die Hauptseite von am-I-safe.
+
+4. public/app.js
+   Die Logik der Webseite:
+   Karte, Buttons, Suche, Bewertungen, Login, Ticker.
+
+5. public/styles.css
+   Das Design und Layout der Webseite.
+
+6. public/sicherheit.html
+   Die Unterseite "Ich brauche mehr Sicherheit".
+
+7. public/rechtliches.html
+   Die Unterseite fuer Impressum und Datenschutz.
+
+8. data/store.json
+   Gespeicherte Anwendungsdaten, z. B. Bewertungen und Meldungen.
+
+9. Datenbank-und-Export.txt
+   Kurze Erklaerung zur Datenspeicherung und zu lokalen Export-Links.
+
+10. public/admin.html
+   Lokale Verwaltungsseite fuer Firmen und registrierte Nutzer.
+
+11. Offene-Aufgaben-bis-zum-Echtbetrieb.txt
+   Uebersicht der wichtigsten Aufgaben vor einer echten Veroeffentlichung.
+
+12. package.json
+   Start- und Projektdatei fuer Node, GitHub und Render.
+
+13. render.yaml
+   Kleine Render-Vorlage fuer ein spaeteres Deployment.
+
+14. GitHub-und-Render-Start.txt
+   Kurzanleitung fuer GitHub, Render und die Domain sicherodernicht.de.
+
+So startest du das Projekt:
+
+1. Ordner "Web-App" im Finder oeffnen
+2. Auf "Start am-I-safe.command" doppelklicken
+3. Im Browser http://localhost:3000 aufrufen
+
+Wichtig:
+
+- Der Code bleibt im Ordner "Web-App" gespeichert.
+- Wenn der Laptop zugeklappt wird, bleiben die Dateien erhalten.
+- Der laufende lokale Server kann dabei aber stoppen.
+- Dann einfach den Starter erneut doppelklicken.
+
+Empfehlung:
+
+- Nur noch mit dem Ordner "Web-App" arbeiten.
+- Den Ordner gelegentlich als Kopie oder ZIP sichern.

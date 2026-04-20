@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: am-i-safe
+    env: node
+    plan: free
+    buildCommand: ""
+    startCommand: "npm start"
+    autoDeploy: true

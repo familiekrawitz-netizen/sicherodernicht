@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>am-I-safe | Verwaltung</title>
+    <link rel="stylesheet" href="/styles.css?v=41" />
+  </head>
+  <body class="subpage-body">
+    <main class="subpage-shell legal-shell">
+      <a class="back-link" href="/index.html">← am-I-safe</a>
+
+      <section class="subpage-hero glass legal-hero">
+        <p class="chip">Lokale Verwaltung</p>
+        <h1>Firmen und registrierte Nutzer</h1>
+        <p>
+          Diese Verwaltungsseite ist fur den Prototypen lokal auf deinem Mac vorbereitet. Hier kannst du Firmen fur
+          das Laufband pflegen und registrierten Nutzern Login-Daten zuweisen oder entziehen.
+        </p>
+        <div class="legal-note">
+          PIN-Regel: 5 Ziffern und 2 Buchstaben, zum Beispiel <strong>12345ab</strong>.
+        </div>
+      </section>
+
+      <section class="subpage-grid admin-grid">
+        <article class="panel-card admin-card">
+          <h2>Firma anlegen oder bearbeiten</h2>
+          <form id="companyForm" class="admin-form">
+            <input id="companyId" type="hidden" />
+            <label>
+              Firmenname
+              <input id="companyName" required placeholder="Beispiel Sicherheit GmbH" />
+            </label>
+            <label>
+              Logo-Text
+              <input id="companyLogoText" maxlength="4" required placeholder="BS" />
+            </label>
+            <label>
+              Firmenfarbe
+              <input id="companyColor" type="color" value="#2563eb" />
+            </label>
+            <div class="admin-actions">
+              <button class="primary-button" type="submit">Firma speichern</button>
+              <button id="resetCompanyForm" class="ghost-button" type="button">Neu</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="panel-card admin-card">
+          <h2>Nutzer anlegen oder bearbeiten</h2>
+          <form id="userForm" class="admin-form">
+            <input id="userId" type="hidden" />
+            <label>
+              Name
+              <input id="userName" required placeholder="Max Beispiel" />
+            </label>
+            <label>
+              Login-Code
+              <input id="userCode" required placeholder="max1" />
+            </label>
+            <label>
+              PIN
+              <input id="userPin" required pattern="[0-9]{5}[A-Za-z]{2}" placeholder="12345ab" />
+            </label>
+            <label>
+              Rolle
+              <select id="userRole">
+                <option value="private">Privatnutzer</option>
+                <option value="company">Firmennutzer</option>
+              </select>
+            </label>
+            <label>
+              Firma
+              <select id="userCompany"></select>
+            </label>
+            <div class="admin-actions">
+              <button class="primary-button" type="submit">Nutzer speichern</button>
+              <button id="resetUserForm" class="ghost-button" type="button">Neu</button>
+            </div>
+          </form>
+        </article>
+      </section>
+
+      <section class="subpage-grid admin-grid">
+        <article class="panel-card admin-card">
+          <h2>Firmen im Laufband</h2>
+          <div id="companyList" class="admin-list"></div>
+        </article>
+
+        <article class="panel-card admin-card">
+          <h2>Registrierte Nutzer</h2>
+          <div id="userList" class="admin-list"></div>
+        </article>
+      </section>
+
+      <p id="adminStatus" class="status-line"></p>
+
+      <footer class="site-footer legal-footer">
+        <a class="footer-link" href="/index.html">Zur Startseite</a>
+        <a class="footer-link" href="/Datenbank-und-Export.txt">Datenbank & Export</a>
+        <a class="footer-link" href="/rechtliches.html">Impressum & Datenschutz</a>
+      </footer>
+    </main>
+
+    <script>
+      const state = { companies: [], users: [] };
+      const companyForm = document.getElementById('companyForm');
+      const userForm = document.getElementById('userForm');
+      const companyList = document.getElementById('companyList');
+      const userList = document.getElementById('userList');
+      const userCompany = document.getElementById('userCompany');
+      const adminStatus = document.getElementById('adminStatus');
+
+      function showStatus(message) {
+        adminStatus.textContent = message;
+      }
+
+      async function api(path, options = {}) {
+        const response = await fetch(path, {
+          headers: { 'Content-Type': 'application/json' },
+          ...options
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Fehler');
+        return payload;
+      }
+
+      function resetCompanyForm() {
+        companyForm.reset();
+        document.getElementById('companyId').value = '';
+        document.getElementById('companyColor').value = '#2563eb';
+      }
+
+      function resetUserForm() {
+        userForm.reset();
+        document.getElementById('userId').value = '';
+        document.getElementById('userRole').value = 'private';
+        updateCompanySelectState();
+      }
+
+      function updateCompanySelectState() {
+        userCompany.disabled = document.getElementById('userRole').value !== 'company';
+      }
+
+      function renderCompanies() {
+        userCompany.innerHTML = state.companies
+          .map((company) => `<option value="${company.id}">${company.name}</option>`)
+          .join('');
+
+        companyList.innerHTML = state.companies
+          .map(
+            (company) => `
+              <div class="admin-row">
+                <span class="ticker-mark" style="background:${company.color}">${company.logoText}</span>
+                <div>
+                  <strong>${company.name}</strong><br>
+                  <small>${company.id}</small>
+                </div>
+                <button class="ghost-button tiny" data-edit-company="${company.id}" type="button">Bearbeiten</button>
+                <button class="ghost-button tiny danger-admin" data-delete-company="${company.id}" type="button">Löschen</button>
+              </div>
+            `
+          )
+          .join('');
+
+        companyList.querySelectorAll('[data-edit-company]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const company = state.companies.find((entry) => entry.id === button.dataset.editCompany);
+            if (!company) return;
+            document.getElementById('companyId').value = company.id;
+            document.getElementById('companyName').value = company.name;
+            document.getElementById('companyLogoText').value = company.logoText;
+            document.getElementById('companyColor').value = company.color;
+          });
+        });
+
+        companyList.querySelectorAll('[data-delete-company]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            if (!confirm('Firma wirklich entfernen? Zugeordnete Nutzer werden zu Privatnutzern.')) return;
+            await api(`/api/admin/company?id=${encodeURIComponent(button.dataset.deleteCompany)}`, { method: 'DELETE' });
+            await loadCatalog();
+            showStatus('Firma entfernt.');
+          });
+        });
+      }
+
+      function renderUsers() {
+        userList.innerHTML = state.users
+          .map(
+            (user) => `
+              <div class="admin-row">
+                <div>
+                  <strong>${user.name}</strong><br>
+                  <small>${user.role === 'company' ? 'Firmennutzer' : 'Privatnutzer'} · ${user.code} · ${user.pin}</small><br>
+                  <small>${user.companyName || 'Keine Firma'}</small>
+                </div>
+                <button class="ghost-button tiny" data-edit-user="${user.id}" type="button">Bearbeiten</button>
+                <button class="ghost-button tiny danger-admin" data-delete-user="${user.id}" type="button">Entziehen</button>
+              </div>
+            `
+          )
+          .join('');
+
+        userList.querySelectorAll('[data-edit-user]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const user = state.users.find((entry) => entry.id === button.dataset.editUser);
+            if (!user) return;
+            document.getElementById('userId').value = user.id;
+            document.getElementById('userName').value = user.name;
+            document.getElementById('userCode').value = user.code;
+            document.getElementById('userPin').value = user.pin;
+            document.getElementById('userRole').value = user.role;
+            updateCompanySelectState();
+            if (user.companyId) userCompany.value = user.companyId;
+          });
+        });
+
+        userList.querySelectorAll('[data-delete-user]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            if (!confirm('Login dieses Nutzers wirklich aufheben?')) return;
+            await api(`/api/admin/user?id=${encodeURIComponent(button.dataset.deleteUser)}`, { method: 'DELETE' });
+            await loadCatalog();
+            showStatus('Nutzerzugang aufgehoben.');
+          });
+        });
+      }
+
+      async function loadCatalog() {
+        const payload = await api('/api/admin/catalog');
+        state.companies = payload.companies || [];
+        state.users = payload.users || [];
+        renderCompanies();
+        renderUsers();
+        updateCompanySelectState();
+      }
+
+      companyForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await api('/api/admin/company', {
+          method: 'POST',
+          body: JSON.stringify({
+            id: document.getElementById('companyId').value,
+            name: document.getElementById('companyName').value,
+            logoText: document.getElementById('companyLogoText').value,
+            color: document.getElementById('companyColor').value
+          })
+        });
+        resetCompanyForm();
+        await loadCatalog();
+        showStatus('Firma gespeichert.');
+      });
+
+      userForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await api('/api/admin/user', {
+          method: 'POST',
+          body: JSON.stringify({
+            id: document.getElementById('userId').value,
+            name: document.getElementById('userName').value,
+            code: document.getElementById('userCode').value,
+            pin: document.getElementById('userPin').value,
+            role: document.getElementById('userRole').value,
+            companyId: userCompany.value
+          })
+        });
+        resetUserForm();
+        await loadCatalog();
+        showStatus('Nutzer gespeichert.');
+      });
+
+      document.getElementById('resetCompanyForm').addEventListener('click', resetCompanyForm);
+      document.getElementById('resetUserForm').addEventListener('click', resetUserForm);
+      document.getElementById('userRole').addEventListener('change', updateCompanySelectState);
+
+      loadCatalog().catch((error) => showStatus(error.message));
+    </script>
+  </body>
+</html>

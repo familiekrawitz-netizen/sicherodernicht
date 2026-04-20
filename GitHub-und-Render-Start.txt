@@ -1,0 +1,51 @@
+am-I-safe - Vorbereitung fuer GitHub und Render
+
+Projektordner:
+/Users/peterkrawitz/Documents/Web-App
+
+Domain:
+sicherodernicht.de
+
+Was jetzt vorbereitet ist:
+
+1. package.json
+   Render und andere Node-Hoster wissen damit, wie die App gestartet wird.
+   Startbefehl:
+   npm start
+
+2. .gitignore
+   Verhindert, dass lokale Mac-Dateien, ZIPs, node_modules und lokale Testdaten versehentlich auf GitHub landen.
+
+3. render.yaml
+   Kleine Render-Vorlage fuer einen Web Service.
+
+Wichtige Render-Einstellungen:
+
+- Service-Typ: Web Service
+- Runtime / Environment: Node
+- Build Command: leer lassen oder npm install
+- Start Command: npm start
+- Root Directory: leer lassen, wenn das Repository direkt den Inhalt von Web-App enthaelt
+
+Wichtig zur Datenbank:
+
+Der aktuelle Prototyp speichert lokal in data/store.json.
+Diese Datei wird bewusst nicht fuer GitHub vorgesehen.
+Auf Render waere diese lokale Datei nicht als dauerhafte produktive Datenbank geeignet.
+Fuer echten Betrieb sollte spaeter PostgreSQL eingerichtet werden.
+
+Domain-Verknuepfung:
+
+Die Domain sicherodernicht.de wird spaeter nicht hauptsaechlich im Code eingetragen.
+Sie wird beim Hosting-Anbieter Render als Custom Domain verbunden.
+Danach muessen beim Domainanbieter die DNS-Eintraege gesetzt werden.
+
+Empfohlener Ablauf:
+
+1. GitHub-Repository erstellen.
+2. Projektordner Web-App in dieses Repository hochladen.
+3. Render mit GitHub verbinden.
+4. Bei Render einen Web Service aus dem Repository erstellen.
+5. Start Command auf npm start setzen.
+6. Nach erfolgreichem Deploy sicherodernicht.de als Custom Domain verbinden.
+7. Erst fuer echten Betrieb Datenbank, Admin-Schutz und Datenschutz finalisieren.

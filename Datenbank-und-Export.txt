@@ -1,0 +1,48 @@
+am-I-safe - Datenbank und Export
+
+Aktueller lokaler Datenspeicher:
+/Users/peterkrawitz/Documents/Web-App/data/store.json
+
+Wichtig:
+
+- Anonyme oeffentliche Bewertungen werden dauerhaft gespeichert.
+- Anonyme Fun-Meldungen werden dauerhaft gespeichert.
+- Registrierte Alarmmeldungen werden dauerhaft gespeichert.
+- Login-Sitzungen, Missbrauchs-Cooldowns und veraltete Live-Teamstandorte werden weiterhin zeitlich bereinigt.
+
+Warum:
+
+- Bewertungen und Meldungen sollen spaeter ein Lagebild ergeben.
+- Personenbezogene Live-Daten sollen nicht laenger als notwendig vorgehalten werden.
+- Registrierte Alarmmeldungen bleiben nachvollziehbar: wer, wann, wo, was.
+
+Lokale Export-Links:
+
+Alle Daten als JSON:
+http://localhost:3000/api/data/export?type=all&format=json
+
+Alle Daten als CSV:
+http://localhost:3000/api/data/export?type=all&format=csv
+
+Nur anonyme oeffentliche Daten:
+http://localhost:3000/api/data/export?type=public&format=csv
+
+Nur registrierte Alarmmeldungen:
+http://localhost:3000/api/data/export?type=registered&format=csv
+
+Erste Lagebild-Auswertung:
+http://localhost:3000/api/data/summary
+
+Export-Typen:
+
+- all
+- public
+- ratings
+- fun
+- registered
+- alerts
+
+Hinweis:
+
+Die Export-Endpunkte sind im Prototyp nur lokal auf diesem Mac erlaubt.
+Vor einer echten Veroeffentlichung braucht der Export eine echte Admin-Anmeldung und Rollenpruefung.
