@@ -1162,7 +1162,7 @@ function renderAuthPanel() {
         <div class="panel-head"><strong>${t('companyPublicRatings')}</strong></div>
         <div class="company-rating-grid">
           ${[5, 4, 3, 2, 1]
-            .map((score) => `<button type="button" class="score-button score-${score}" data-company-score="${score}" data-label="${t(`scores.${score}`)}">${score}</button>`)
+            .map((score) => `<button type="button" class="score-button score-${score}" data-company-score="${score}" aria-label="${t(`scores.${score}`)}">${score}</button>`)
             .join('')}
         </div>
       </section>

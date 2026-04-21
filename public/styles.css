@@ -1367,6 +1367,12 @@ body.company-mode #registeredPanel {
 .company-rating-grid .score-button {
   min-height: 54px;
   border-radius: 16px;
+  font-size: 1.3rem;
+  font-weight: 950;
+}
+
+.company-rating-grid .score-button::after {
+  content: none;
 }
 
 body.company-mode .company-overview-card,
