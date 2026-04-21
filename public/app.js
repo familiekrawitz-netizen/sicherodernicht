@@ -1040,18 +1040,6 @@ function renderAuthPanel() {
     const visibleMembers = state.companyMembers.filter((member) => member.location).length;
     companyPanel.classList.remove('hidden');
     companyPanel.innerHTML = `
-      <section class="company-overview-card">
-        <div class="panel-head"><strong>${t('companyOverview')}</strong></div>
-        <div class="company-metrics">
-          <div><strong>${currentAlerts.length}</strong><span>${t('activeAlerts24')}</span></div>
-          <div><strong>${visibleMembers}</strong><span>${t('visibleTeam')}</span></div>
-          <div><strong>${state.shareCompanyLocation ? 'ON' : 'OFF'}</strong><span>${t('ownLocationStatus')}</span></div>
-        </div>
-        <div class="company-action-row">
-          <button id="panelShowAlertsBtn" class="primary-button" type="button">${t('showNextAlert')}</button>
-          <button id="companyExportBtn" class="outline-button" type="button">${t('exportData')}</button>
-        </div>
-      </section>
       <div class="panel-head"><strong>${t('companyTools')}</strong></div>
       <div class="login-grid">
         <input id="alertNote" class="alert-note-input" placeholder="${t('alertPlaceholder')}" maxlength="220" />
@@ -1067,6 +1055,19 @@ function renderAuthPanel() {
         <strong>${t('responseChain')}</strong>
         <span>${t('responseChainText')}</span>
       </div>
+      <div class="divider"></div>
+      <section class="company-overview-card">
+        <div class="panel-head"><strong>${t('companyOverview')}</strong></div>
+        <div class="company-metrics">
+          <div><strong>${currentAlerts.length}</strong><span>${t('activeAlerts24')}</span></div>
+          <div><strong>${visibleMembers}</strong><span>${t('visibleTeam')}</span></div>
+          <div><strong>${state.shareCompanyLocation ? 'ON' : 'OFF'}</strong><span>${t('ownLocationStatus')}</span></div>
+        </div>
+        <div class="company-action-row">
+          <button id="panelShowAlertsBtn" class="primary-button" type="button">${t('showNextAlert')}</button>
+          <button id="companyExportBtn" class="outline-button" type="button">${t('exportData')}</button>
+        </div>
+      </section>
       <div class="divider"></div>
       <div class="team-location-header">
         <strong>${t('memberLocations')}</strong>
