@@ -720,13 +720,13 @@ function currentDangerAlerts() {
 
 function updateCurrentAlertsButton() {
   const isCompany = state.user?.role === 'company';
-  currentAlertsBtn.classList.toggle('hidden', !isCompany);
-  if (!isCompany) return;
-
   const alerts = currentDangerAlerts();
+  currentAlertsBtn.classList.toggle('hidden', !isCompany || !alerts.length);
+  if (!isCompany || !alerts.length) return;
+
   const label = alerts.length === 1 ? t('currentAlertSingular') : t('currentAlertPlural');
-  currentAlertsBtn.textContent = alerts.length ? `${alerts.length} ${label}` : t('noCurrentAlerts');
-  currentAlertsBtn.disabled = !alerts.length;
+  currentAlertsBtn.textContent = `${alerts.length} ${label}`;
+  currentAlertsBtn.disabled = false;
 }
 
 function playCompanyAlertSound() {
