@@ -1,4 +1,5 @@
 const CONSENT_KEY = 'am-i-safe-consent-v1';
+const DESIGN_KEY = 'am-i-safe-design-mode';
 
 function storedConsent() {
   try {
@@ -17,12 +18,18 @@ function cleanupComfortStorage() {
   localStorage.removeItem('am-i-safe-share-company-location');
   localStorage.removeItem('am-i-safe-login-code');
   localStorage.removeItem('am-i-safe-login-pin');
+  localStorage.removeItem(DESIGN_KEY);
 }
 
 function rememberComfortValue(key, value) {
   if (hasComfortConsent()) {
     localStorage.setItem(key, value);
   }
+}
+
+function storedDesignMode() {
+  const saved = hasComfortConsent() ? localStorage.getItem(DESIGN_KEY) : sessionStorage.getItem(DESIGN_KEY);
+  return saved === 'classic' ? 'classic' : 'friendly';
 }
 
 const state = {
@@ -43,14 +50,19 @@ const state = {
   tickerItems: [],
   legendFilter: null,
   currentAlertIndex: -1,
-  shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('am-i-safe-share-company-location') !== 'off' : true
+  shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('am-i-safe-share-company-location') !== 'off' : true,
+  designMode: storedDesignMode()
 };
 
 const texts = {
   de: {
     defaultView: 'Standard: dieses Jahr',
+    brandClaim: 'Sicher unterwegs. Schöne Orte teilen.',
     heroTitle: 'Bin ich hier sicher? Wo ist es schön?',
-    heroCopy: 'Bewertungen werden nur auf 100 Meter gerundet gespeichert. Offentliche Meldungen bleiben anonym, Missbrauch wird serverseitig gebremst.',
+    heroCopy: 'Teile in Sekunden, wie sich ein Ort gerade anfühlt. Die Karte zeigt schöne, neutrale und unsichere Bereiche ohne einzelne Geschäfte oder Privatpersonen herauszustellen.',
+    marketMap: 'Karte zuerst',
+    marketCommunity: 'Anonym im Alltag',
+    marketPro: 'Profi-Modus nach Login',
     locateMe: 'Ich bin hier',
     todayMode: 'Heute',
     thisWeek: 'Diese Woche',
@@ -81,7 +93,10 @@ const texts = {
     filterEnded: 'Filter wieder ausgeblendet',
     alertsTitle: 'Registrierte Nutzer',
     logout: 'Logout',
-    bannerCopy: 'Reservierter Bereich fur Partner oder Hinweise.',
+    adTitle: 'Partnerplatz',
+    bannerCopy: 'Dezente Fläche für lokale Partner, Sicherheitshinweise oder gesponserte Angebote.',
+    designClassic: 'Klassisches Design',
+    designFriendly: 'Freundliches Design',
     excellentNearby: 'Pfeile zeigen zum nachsten sehr gut bewerteten Ort',
     centerMap: 'Zentrieren',
     searchPlaceholder: 'Ort suchen oder ausprobieren: Alexanderplatz',
@@ -173,8 +188,12 @@ const texts = {
   },
   en: {
     defaultView: 'Default: this year',
-    heroTitle: 'See how an area feels with as few taps as possible',
-    heroCopy: 'Ratings are stored only on a 100 meter grid. Public reports stay anonymous and server-side throttling reduces abuse.',
+    brandClaim: 'Move safely. Share good places.',
+    heroTitle: 'Am I safe here? Where does it feel good?',
+    heroCopy: 'Share in seconds how a place feels right now. The map shows beautiful, neutral and unsafe areas without exposing individual shops or private people.',
+    marketMap: 'Map first',
+    marketCommunity: 'Anonymous day to day',
+    marketPro: 'Pro mode after login',
     locateMe: 'Use my location',
     todayMode: 'Today',
     thisWeek: 'This week',
@@ -205,7 +224,10 @@ const texts = {
     filterEnded: 'Filter hidden again',
     alertsTitle: 'Registered users',
     logout: 'Logout',
-    bannerCopy: 'Reserved area for partners or notices.',
+    adTitle: 'Partner space',
+    bannerCopy: 'Subtle space for local partners, safety notices or sponsored offers.',
+    designClassic: 'Classic design',
+    designFriendly: 'Friendly design',
     excellentNearby: 'Arrows point to the next very well rated area',
     centerMap: 'Center',
     searchPlaceholder: 'Search place or try: Alexanderplatz',
@@ -367,6 +389,7 @@ const necessaryConsentBtn = document.getElementById('necessaryConsentBtn');
 const saveConsentBtn = document.getElementById('saveConsentBtn');
 const acceptComfortBtn = document.getElementById('acceptComfortBtn');
 const cookieSettingsBtn = document.getElementById('cookieSettingsBtn');
+const designToggleBtn = document.getElementById('designToggleBtn');
 
 const viewOptions = ['today', 'week', 'month', 'year'];
 
@@ -393,13 +416,32 @@ function saveConsent(comfort) {
     cleanupComfortStorage();
     state.language = 'de';
     state.shareCompanyLocation = true;
+    state.designMode = 'friendly';
   } else {
     rememberComfortValue('am-i-safe-language', state.language);
     rememberComfortValue('am-i-safe-share-company-location', state.shareCompanyLocation ? 'on' : 'off');
+    rememberComfortValue(DESIGN_KEY, state.designMode);
   }
 
   consentBanner.classList.add('hidden');
+  applyDesignMode();
   updateTranslations();
+}
+
+function applyDesignMode() {
+  document.body.classList.toggle('design-classic', state.designMode === 'classic');
+  document.body.classList.toggle('design-friendly', state.designMode !== 'classic');
+  if (designToggleBtn) {
+    designToggleBtn.textContent = state.designMode === 'classic' ? t('designFriendly') : t('designClassic');
+  }
+}
+
+function toggleDesignMode() {
+  state.designMode = state.designMode === 'classic' ? 'friendly' : 'classic';
+  sessionStorage.setItem(DESIGN_KEY, state.designMode);
+  rememberComfortValue(DESIGN_KEY, state.designMode);
+  applyDesignMode();
+  window.setTimeout(() => map.invalidateSize(), 120);
 }
 
 function scoreColor(score) {
@@ -513,6 +555,7 @@ function updateTranslations() {
   document.querySelectorAll('[data-i18n]').forEach((node) => {
     node.textContent = t(node.dataset.i18n);
   });
+  applyDesignMode();
   searchInput.placeholder = t('searchPlaceholder');
   languageToggle.innerHTML = state.language === 'de' ? '<span>🇩🇪</span><span>DE</span>' : '<span>🇬🇧</span><span>EN</span>';
   loginButton.textContent = state.user ? state.user.name : 'Login';
@@ -1592,6 +1635,7 @@ window.addEventListener('resize', () => {
 window.addEventListener('pagehide', logoutOnAppClose);
 
 languageToggle.addEventListener('click', toggleLanguage);
+designToggleBtn.addEventListener('click', toggleDesignMode);
 cookieSettingsBtn.addEventListener('click', () => showConsentBanner(true));
 necessaryConsentBtn.addEventListener('click', () => saveConsent(false));
 saveConsentBtn.addEventListener('click', () => saveConsent(comfortConsentInput.checked));
@@ -1630,6 +1674,7 @@ loginButton.addEventListener('click', () => {
 });
 
 async function bootstrap() {
+  applyDesignMode();
   showConsentBanner();
   const bootstrapData = await api('/api/bootstrap');
   state.mapData = { companies: bootstrapData.companies, emergencyPlaces: bootstrapData.emergencyPlaces, cells: [], alerts: [], funReports: [] };
