@@ -1,4 +1,4 @@
-# am-I-safe
+# sicherodernicht
 
 Mobile-first Web-App fuer ortsbezogene Sicherheits- und Erlebnisbewertungen.
 
@@ -20,7 +20,7 @@ http://localhost:3000
 
 Alternativ auf dem Mac:
 
-`Start am-I-safe.command` doppelklicken.
+`Start sicherodernicht.command` doppelklicken.
 
 ## Wichtige Dateien
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'am-i-safe-v22';
+const CACHE_NAME = 'sicherodernicht-v22';
 const APP_SHELL = ['/', '/index.html', '/sicherheit.html', '/styles.css?v=22', '/app.js?v=22', '/manifest.json?v=22'];
 
 self.addEventListener('install', (event) => {

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: am-i-safe
+    name: sicherodernicht
     env: node
     plan: free
     buildCommand: ""

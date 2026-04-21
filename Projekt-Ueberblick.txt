@@ -1,18 +1,18 @@
-am-I-safe - Projekt-Ueberblick
+sicherodernicht - Projekt-Ueberblick
 
 Projektordner:
 /Users/peterkrawitz/Documents/Web-App
 
 Wichtige Dateien:
 
-1. Start am-I-safe.command
+1. Start sicherodernicht.command
    Startet den lokalen Server per Doppelklick.
 
 2. server.js
    Der lokale Server der Web-App.
 
 3. public/index.html
-   Die Hauptseite von am-I-safe.
+   Die Hauptseite von sicherodernicht.
 
 4. public/app.js
    Die Logik der Webseite:
@@ -51,7 +51,7 @@ Wichtige Dateien:
 So startest du das Projekt:
 
 1. Ordner "Web-App" im Finder oeffnen
-2. Auf "Start am-I-safe.command" doppelklicken
+2. Auf "Start sicherodernicht.command" doppelklicken
 3. Im Browser http://localhost:3000 aufrufen
 
 Wichtig:

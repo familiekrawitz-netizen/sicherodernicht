@@ -14,7 +14,7 @@ const PUBLIC_SCORES = [1, 2, 3, 4, 5];
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
 const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 4;
 const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
-const ANTI_SPAM_SALT = 'am-i-safe-privacy-first-v1';
+const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
 
 const defaultStore = () => ({
   ratings: [],
@@ -892,7 +892,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/bootstrap' && req.method === 'GET') {
     writeStore(store);
     sendJson(res, 200, {
-      appName: 'am-I-safe',
+      appName: 'sicherodernicht',
       defaultLanguage: 'de',
       demoAccounts: [
         { code: 'anna', pin: '12345ab', role: 'private' },
@@ -1411,5 +1411,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`am-I-safe lauft auf http://localhost:${PORT}`);
+  console.log(`sicherodernicht lauft auf http://localhost:${PORT}`);
 });

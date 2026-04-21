@@ -1,6 +1,6 @@
 {
-  "name": "am-I-safe",
-  "short_name": "am-I-safe",
+  "name": "sicherodernicht",
+  "short_name": "sicherodernicht",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#081120",

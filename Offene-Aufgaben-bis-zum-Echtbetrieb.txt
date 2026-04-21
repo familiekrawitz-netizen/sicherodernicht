@@ -1,8 +1,8 @@
-am-I-safe - Offene Aufgaben bis zum Echtbetrieb
+sicherodernicht - Offene Aufgaben bis zum Echtbetrieb
 
 Stand: 20.04.2026
 
-Diese Liste sammelt die wichtigsten Aufgaben, bevor am-I-safe mit echten Nutzern oeffentlich betrieben werden sollte.
+Diese Liste sammelt die wichtigsten Aufgaben, bevor sicherodernicht mit echten Nutzern oeffentlich betrieben werden sollte.
 Der aktuelle Stand ist ein lokaler Prototyp.
 
 1. Datenbank fuer den Echtbetrieb
