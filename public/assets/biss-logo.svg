@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" role="img" aria-labelledby="title desc">
+  <title id="title">B.I.S.S. e.V.</title>
+  <desc id="desc">Rotes Logo der Berliner Initiative sichere Stadt e.V. als Partnergrafik.</desc>
+  <rect width="300" height="300" rx="10" fill="#c9003f"/>
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M154 42c-56 0-102 45-102 102s45 103 103 103" stroke-width="13"/>
+    <path d="M161 43c-12-7-20-13-18-21 17-1 28 13 35 23 20 2 36 11 45 25-5 3-8 6-10 10 18 4 29 12 37 29l10 2 13 16-11 15c-16-2-35-2-51 3-10 3-18 9-24 16-23 2-43 1-61-1v82" stroke-width="7"/>
+    <path d="M167 84c15-11 33-2 43 14" stroke-width="7"/>
+    <path d="M189 101c25 0 44 13 55 31" stroke-width="7"/>
+    <path d="M124 82c-14 12-16 30-5 43" stroke-width="8"/>
+    <path d="M144 77c-15 19-10 41 14 48" stroke-width="7"/>
+    <path d="M202 119h33" stroke-width="5"/>
+    <path d="M205 116l9 15 10-15" stroke-width="5"/>
+  </g>
+  <g fill="#fff">
+    <text x="70" y="155" font-family="Georgia, serif" font-size="24" font-weight="800" letter-spacing="1">B.I.S.S.</text>
+    <text x="73" y="172" font-family="Georgia, serif" font-size="18" font-weight="800">e.V.</text>
+    <path d="M151 186l47-13 48 13v45c0 30-22 49-48 57-26-8-47-27-47-57z"/>
+    <path d="M160 194l38-10 39 10v36c0 24-18 39-39 46-21-7-38-22-38-46z" fill="#c9003f"/>
+    <path d="M172 222h17v37h-17zM207 212h17v47h-17zM190 199h16v60h-16z" fill="#fff"/>
+    <path d="M167 241h62v5h-62zM174 232h10v5h-10zM194 221h8v5h-8zM211 225h9v5h-9z" fill="#c9003f"/>
+    <path d="M175 219l23-22 25 22 15-2-40-31-40 31z" fill="#fff"/>
+    <circle cx="188" cy="269" r="7" fill="#c9003f" stroke="#fff" stroke-width="4"/>
+    <circle cx="209" cy="269" r="7" fill="#c9003f" stroke="#fff" stroke-width="4"/>
+    <circle cx="198" cy="250" r="7" fill="#c9003f" stroke="#fff" stroke-width="4"/>
+  </g>
+</svg>
