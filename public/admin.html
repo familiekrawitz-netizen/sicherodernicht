@@ -5,23 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0f172a" />
     <title>sicherodernicht | Verwaltung</title>
-    <link rel="stylesheet" href="/styles.css?v=53" />
+    <link rel="stylesheet" href="/styles.css?v=61" />
   </head>
   <body class="subpage-body">
     <main class="subpage-shell legal-shell">
       <a class="back-link" href="/index.html">← sicherodernicht</a>
 
       <section class="subpage-hero glass legal-hero">
-        <p class="chip">Lokale Verwaltung</p>
-        <h1>Firmen und registrierte Nutzer</h1>
+        <p class="chip">Geschützte Verwaltung</p>
+        <h1>Adminbereich</h1>
         <p>
-          Diese Verwaltungsseite ist fur den Prototypen lokal auf deinem Mac vorbereitet. Hier kannst du Firmen fur
-          das Laufband pflegen und registrierten Nutzern Login-Daten zuweisen oder entziehen.
+          Diese Seite ist für Export, Datenbankübersicht, Firmenverwaltung und registrierte Nutzer vorgesehen.
+          Änderungen sind nur nach Admin-Login möglich.
         </p>
         <div class="legal-note">
-          PIN-Regel: 5 Ziffern und 2 Buchstaben, zum Beispiel <strong>12345ab</strong>.
+          Admin-Zugang für die Testphase: eigener Admin-Code und PIN. Im Echtbetrieb bitte über sichere
+          Umgebungsvariablen und später idealerweise mit Zwei-Faktor-Schutz betreiben.
         </div>
       </section>
+
+      <section id="adminLoginPanel" class="panel-card admin-card">
+        <h2>Admin-Login</h2>
+        <form id="adminLoginForm" class="admin-form">
+          <label>
+            Admin-Code
+            <input id="adminCode" autocomplete="username" required placeholder="Admin-Code" />
+          </label>
+          <label>
+            Admin-PIN
+            <input id="adminPin" autocomplete="current-password" required type="password" placeholder="PIN" />
+          </label>
+          <div class="admin-actions">
+            <button class="primary-button" type="submit">Admin einloggen</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="adminArea" class="hidden">
+        <section class="panel-card admin-card">
+          <div class="panel-head">
+            <h2>Datenbank & Export</h2>
+            <button id="adminLogoutBtn" class="ghost-button tiny" type="button">Admin-Logout</button>
+          </div>
+          <div class="admin-actions admin-export-actions">
+            <button id="exportAllCsvBtn" class="primary-button" type="button">Alles als CSV exportieren</button>
+            <button id="exportAllJsonBtn" class="ghost-button" type="button">Alles als JSON anzeigen</button>
+            <button id="loadSummaryBtn" class="ghost-button" type="button">Datenbankübersicht laden</button>
+          </div>
+          <pre id="adminSummary" class="admin-summary-box"></pre>
+        </section>
 
       <section class="subpage-grid admin-grid">
         <article class="panel-card admin-card">
@@ -93,6 +125,7 @@
           <div id="userList" class="admin-list"></div>
         </article>
       </section>
+      </section>
 
       <p id="adminStatus" class="status-line"></p>
 
@@ -105,13 +138,22 @@
     </main>
 
     <script>
-      const state = { companies: [], users: [] };
+      const ADMIN_TOKEN_KEY = 'sicherodernicht-admin-token';
+      const state = {
+        companies: [],
+        users: [],
+        token: sessionStorage.getItem(ADMIN_TOKEN_KEY) || ''
+      };
+      const adminLoginPanel = document.getElementById('adminLoginPanel');
+      const adminLoginForm = document.getElementById('adminLoginForm');
+      const adminArea = document.getElementById('adminArea');
       const companyForm = document.getElementById('companyForm');
       const userForm = document.getElementById('userForm');
       const companyList = document.getElementById('companyList');
       const userList = document.getElementById('userList');
       const userCompany = document.getElementById('userCompany');
       const adminStatus = document.getElementById('adminStatus');
+      const adminSummary = document.getElementById('adminSummary');
 
       function showStatus(message) {
         adminStatus.textContent = message;
@@ -119,12 +161,102 @@
 
       async function api(path, options = {}) {
         const response = await fetch(path, {
-          headers: { 'Content-Type': 'application/json' },
-          ...options
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}),
+            ...(options.headers || {})
+          }
         });
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'Fehler');
         return payload;
+      }
+
+      function setAuthenticated(isAuthenticated) {
+        adminLoginPanel.classList.toggle('hidden', isAuthenticated);
+        adminArea.classList.toggle('hidden', !isAuthenticated);
+      }
+
+      async function loginAdmin(event) {
+        event.preventDefault();
+        const code = document.getElementById('adminCode').value.trim();
+        const pin = document.getElementById('adminPin').value.trim();
+        const payload = await api('/api/admin/login', {
+          method: 'POST',
+          body: JSON.stringify({ code, pin })
+        });
+        state.token = payload.token;
+        sessionStorage.setItem(ADMIN_TOKEN_KEY, state.token);
+        adminLoginForm.reset();
+        setAuthenticated(true);
+        await loadCatalog();
+        showStatus(`Angemeldet als ${payload.admin?.name || 'Admin'}.`);
+      }
+
+      async function logoutAdmin() {
+        if (state.token) {
+          await api('/api/admin/logout', {
+            method: 'POST',
+            body: JSON.stringify({ token: state.token })
+          }).catch(() => {});
+        }
+        state.token = '';
+        sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+        state.companies = [];
+        state.users = [];
+        adminSummary.textContent = '';
+        setAuthenticated(false);
+        showStatus('Admin abgemeldet.');
+      }
+
+      async function requireExistingAdminSession() {
+        if (!state.token) {
+          setAuthenticated(false);
+          return;
+        }
+        try {
+          await api('/api/admin/me');
+          setAuthenticated(true);
+          await loadCatalog();
+        } catch (error) {
+          state.token = '';
+          sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+          setAuthenticated(false);
+          showStatus(error.message);
+        }
+      }
+
+      async function loadSummary() {
+        const payload = await api('/api/data/summary');
+        adminSummary.textContent = JSON.stringify(payload, null, 2);
+        showStatus('Datenbankübersicht geladen.');
+      }
+
+      async function exportData(format) {
+        const response = await fetch(`/api/data/export?type=all&format=${format}`, {
+          headers: { Authorization: `Bearer ${state.token}` }
+        });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload.error || 'Export fehlgeschlagen');
+        }
+        if (format === 'csv') {
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `sicherodernicht-export-${new Date().toISOString().slice(0, 10)}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+          showStatus('CSV-Export erstellt.');
+          return;
+        }
+        const payload = await response.json();
+        adminSummary.textContent = JSON.stringify(payload, null, 2);
+        showStatus('JSON-Export geladen.');
       }
 
       function resetCompanyForm() {
@@ -273,8 +405,14 @@
       document.getElementById('resetCompanyForm').addEventListener('click', resetCompanyForm);
       document.getElementById('resetUserForm').addEventListener('click', resetUserForm);
       document.getElementById('userRole').addEventListener('change', updateCompanySelectState);
+      document.getElementById('adminLogoutBtn').addEventListener('click', logoutAdmin);
+      document.getElementById('loadSummaryBtn').addEventListener('click', () => loadSummary().catch((error) => showStatus(error.message)));
+      document.getElementById('exportAllCsvBtn').addEventListener('click', () => exportData('csv').catch((error) => showStatus(error.message)));
+      document.getElementById('exportAllJsonBtn').addEventListener('click', () => exportData('json').catch((error) => showStatus(error.message)));
+      adminLoginForm.addEventListener('submit', (event) => loginAdmin(event).catch((error) => showStatus(error.message)));
 
-      loadCatalog().catch((error) => showStatus(error.message));
+      setAuthenticated(false);
+      requireExistingAdminSession();
     </script>
   </body>
 </html>

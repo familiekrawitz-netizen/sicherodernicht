@@ -2234,6 +2234,23 @@ body.design-friendly .partner-ad-copy strong::before {
   gap: 10px;
 }
 
+.admin-export-actions {
+  margin: 12px 0;
+}
+
+.admin-summary-box {
+  min-height: 120px;
+  max-height: 360px;
+  overflow: auto;
+  margin: 0;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
 .admin-list {
   display: grid;
   gap: 10px;

@@ -15,12 +15,15 @@ const TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
 const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 4;
 const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
 const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
+const ADMIN_CODE = String(process.env.ADMIN_CODE || 'peter').trim().toLowerCase();
+const ADMIN_PIN = String(process.env.ADMIN_PIN || '97531pk').trim();
 
 const defaultStore = () => ({
   ratings: [],
   alerts: [],
   funReports: [],
   sessions: [],
+  adminSessions: [],
   cooldowns: [],
   users: [
     {
@@ -309,6 +312,7 @@ function isFiniteLatLng(lat, lng) {
 function pruneStore(store) {
   const now = Date.now();
   store.sessions = store.sessions.filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
+  store.adminSessions = (store.adminSessions || []).filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.cooldowns = store.cooldowns.filter((entry) => now - new Date(entry.createdAt).getTime() <= PUBLIC_RATING_COOLDOWN_MS);
   store.users = store.users.map((user) => {
     const lastSeen = user.lastKnownLocation ? new Date(user.lastKnownLocation.updatedAt).getTime() : 0;
@@ -392,6 +396,28 @@ function findUserByToken(store, token) {
   const user = store.users.find((entry) => entry.id === session.userId);
   if (!user) return null;
   return { session, user };
+}
+
+function getBearerToken(req) {
+  const header = req.headers.authorization || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : '';
+}
+
+function findAdminByToken(store, token) {
+  if (!token) return null;
+  const session = (store.adminSessions || []).find((entry) => entry.token === token);
+  if (!session) return null;
+  return { session, admin: { name: 'Peter Krawitz', role: 'admin' } };
+}
+
+function requireAdmin(req, res, store) {
+  const auth = findAdminByToken(store, getBearerToken(req));
+  if (!auth) {
+    sendJson(res, 401, { error: 'Admin-Login erforderlich' });
+    return null;
+  }
+  return auth;
 }
 
 function createToken() {
@@ -953,10 +979,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/data/export' && req.method === 'GET') {
-    if (!isLocalRequest(req)) {
-      sendJson(res, 403, { error: 'Export ist im Prototyp nur lokal erlaubt' });
-      return;
-    }
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
 
     const type = url.searchParams.get('type') || 'all';
     const format = url.searchParams.get('format') || 'json';
@@ -977,30 +1001,69 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/data/summary' && req.method === 'GET') {
-    if (!isLocalRequest(req)) {
-      sendJson(res, 403, { error: 'Auswertung ist im Prototyp nur lokal erlaubt' });
-      return;
-    }
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
 
     sendJson(res, 200, analyticsSummary(store));
     return;
   }
 
-  if (url.pathname === '/api/admin/catalog' && req.method === 'GET') {
-    if (!isLocalRequest(req)) {
-      sendJson(res, 403, { error: 'Admin-Bereich ist im Prototyp nur lokal erlaubt' });
-      return;
+  if (url.pathname === '/api/admin/login' && req.method === 'POST') {
+    try {
+      const parsed = JSON.parse((await readBody(req)) || '{}');
+      const code = String(parsed.code || '').trim().toLowerCase();
+      const pin = String(parsed.pin || '').trim();
+
+      if (code !== ADMIN_CODE || pin !== ADMIN_PIN) {
+        sendJson(res, 401, { error: 'Admin-Login fehlgeschlagen' });
+        return;
+      }
+
+      const token = createToken();
+      store.adminSessions = store.adminSessions || [];
+      store.adminSessions.push({
+        token,
+        createdAt: new Date().toISOString()
+      });
+      writeStore(store);
+      sendJson(res, 200, { token, admin: { name: 'Peter Krawitz', role: 'admin' } });
+    } catch {
+      sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });
     }
+    return;
+  }
+
+  if (url.pathname === '/api/admin/logout' && req.method === 'POST') {
+    try {
+      const parsed = JSON.parse((await readBody(req)) || '{}');
+      const token = String(parsed.token || getBearerToken(req));
+      store.adminSessions = (store.adminSessions || []).filter((entry) => entry.token !== token);
+      writeStore(store);
+      sendJson(res, 200, { ok: true });
+    } catch {
+      sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/admin/me' && req.method === 'GET') {
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
+    sendJson(res, 200, { admin: admin.admin });
+    return;
+  }
+
+  if (url.pathname === '/api/admin/catalog' && req.method === 'GET') {
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
 
     sendJson(res, 200, adminPayload(store));
     return;
   }
 
   if (url.pathname === '/api/admin/company' && req.method === 'POST') {
-    if (!isLocalRequest(req)) {
-      sendJson(res, 403, { error: 'Admin-Bereich ist im Prototyp nur lokal erlaubt' });
-      return;
-    }
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
 
     try {
       const parsed = JSON.parse((await readBody(req)) || '{}');
@@ -1034,10 +1097,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/admin/company' && req.method === 'DELETE') {
-    if (!isLocalRequest(req)) {
-      sendJson(res, 403, { error: 'Admin-Bereich ist im Prototyp nur lokal erlaubt' });
-      return;
-    }
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
 
     const id = url.searchParams.get('id') || '';
     store.companies = store.companies.filter((company) => company.id !== id);
@@ -1050,10 +1111,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/admin/user' && req.method === 'POST') {
-    if (!isLocalRequest(req)) {
-      sendJson(res, 403, { error: 'Admin-Bereich ist im Prototyp nur lokal erlaubt' });
-      return;
-    }
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
 
     try {
       const parsed = JSON.parse((await readBody(req)) || '{}');
@@ -1105,10 +1164,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/admin/user' && req.method === 'DELETE') {
-    if (!isLocalRequest(req)) {
-      sendJson(res, 403, { error: 'Admin-Bereich ist im Prototyp nur lokal erlaubt' });
-      return;
-    }
+    const admin = requireAdmin(req, res, store);
+    if (!admin) return;
 
     const id = url.searchParams.get('id') || '';
     store.users = store.users.filter((user) => user.id !== id);
