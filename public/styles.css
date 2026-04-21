@@ -1228,6 +1228,164 @@ body.design-friendly .company-metrics div {
   background: linear-gradient(135deg, #1e3a8a, #2563eb);
 }
 
+body.company-mode {
+  --card: rgba(9, 16, 29, 0.88);
+  --card-strong: rgba(9, 16, 29, 0.96);
+  --line: rgba(148, 163, 184, 0.18);
+}
+
+body.company-mode .hero-card {
+  background:
+    linear-gradient(145deg, rgba(8, 13, 24, 0.94), rgba(15, 23, 42, 0.88)),
+    radial-gradient(circle at 0% 0%, rgba(239, 68, 68, 0.12), transparent 32%);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.company-mode .hero-copy,
+body.company-mode .rating-card,
+body.company-mode #funToggle,
+body.company-mode #funButtons,
+body.company-mode .ad-slot,
+body.company-mode .toolbar.compact .outline-button {
+  display: none !important;
+}
+
+body.company-mode .toolbar.compact {
+  margin-top: 10px;
+}
+
+body.company-mode #registeredPanel {
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(9, 16, 29, 0.92)),
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.16), transparent 34%);
+  border-color: rgba(96, 165, 250, 0.24);
+  box-shadow: 0 22px 48px rgba(2, 6, 23, 0.32);
+}
+
+.company-mode-header {
+  display: grid;
+  gap: 5px;
+  padding: 2px 2px 4px;
+}
+
+.company-mode-header strong {
+  color: var(--text);
+  font-size: 1.35rem;
+  line-height: 1.05;
+}
+
+.company-mode-header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.company-mode-kicker,
+.company-live-pill,
+.company-category-title {
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.company-live-pill {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
+
+.company-operational-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.62);
+}
+
+.company-danger-card {
+  border-color: rgba(248, 113, 113, 0.28);
+  background:
+    linear-gradient(145deg, rgba(127, 29, 29, 0.22), rgba(15, 23, 42, 0.72)),
+    radial-gradient(circle at 0% 0%, rgba(239, 68, 68, 0.18), transparent 38%);
+}
+
+.company-primary-alert {
+  min-height: 72px;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(135deg, #991b1b, #ef4444);
+  box-shadow: 0 18px 34px rgba(127, 29, 29, 0.32);
+}
+
+.company-primary-alert span {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 1.55rem;
+  font-weight: 950;
+}
+
+.company-primary-alert strong {
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.company-category-title {
+  color: #cbd5e1;
+}
+
+body.company-mode .company-overview-card,
+body.company-mode .response-chain-card,
+body.company-mode .company-feed-row,
+body.company-mode .company-metrics div {
+  background: rgba(15, 23, 42, 0.58);
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+body.company-mode .company-metrics strong,
+body.company-mode .company-overview-card strong,
+body.company-mode .response-chain-card strong {
+  color: var(--text);
+}
+
+.company-member-list {
+  display: grid;
+  gap: 8px;
+}
+
+.member-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.member-main strong,
+.member-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-main small,
+.member-offline {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .ad-slot {
   margin-top: auto;
 }

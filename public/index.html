@@ -15,7 +15,7 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="/styles.css?v=57" />
+    <link rel="stylesheet" href="/styles.css?v=58" />
   </head>
   <body class="design-friendly">
     <div class="shell">
@@ -56,6 +56,12 @@
               <div class="map-overlay top-right">
                 <button id="centerMapBtn" class="ghost-button tiny" type="button" data-i18n="centerMap">Zentrieren</button>
               </div>
+            </section>
+
+            <section id="registeredPanel" class="panel-card hidden">
+              <button id="logoutButton" class="text-button hidden" type="button" data-i18n="logout">Logout</button>
+              <div id="authPanel" class="auth-panel"></div>
+              <div id="companyPanel" class="company-panel hidden"></div>
             </section>
 
             <div class="rating-card">
@@ -104,12 +110,6 @@
         </section>
 
         <aside class="sidebar">
-          <section id="registeredPanel" class="panel-card hidden">
-            <button id="logoutButton" class="text-button hidden" type="button" data-i18n="logout">Logout</button>
-            <div id="authPanel" class="auth-panel"></div>
-            <div id="companyPanel" class="company-panel hidden"></div>
-          </section>
-
           <section class="panel-card">
             <div class="panel-head">
               <h3 data-i18n="orientation">Aktuelle Meldungen</h3>
@@ -176,7 +176,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=56"></script>
+    <script src="/app.js?v=57"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

@@ -124,8 +124,8 @@ const texts = {
     loginIntro: 'Demo-Login fur Privat und Unternehmen. Rollen steuern, welche Sicherheitsfunktionen sichtbar sind.',
     privateAccess: 'Privatzugang',
     companyAccess: 'Firmenzugang',
-    privateDemo: 'Demo privat: anna / 1234',
-    companyDemo: 'Demo firma: safeguard1 / 2468',
+    privateDemo: 'Demo privat: anna / 12345ab',
+    companyDemo: 'Demo firma: safeguard1 / 24680sg',
     loginCode: 'Login-Code',
     loginPin: 'PIN',
     loginSubmit: 'Einloggen',
@@ -138,7 +138,12 @@ const texts = {
     emergencyRegistrationHint: 'Firmennutzer-Registrierung erforderlich',
     companyOnlyEmergency: 'Notfall ist nur für registrierte Firmennutzer aktiv.',
     companyAlertSelectHint: 'Bitte Art der Notfallmeldung auswählen.',
-    alertHint: 'Diese Meldung ist nachvollziehbar und fur registrierte Nutzer sichtbar.',
+    companyModeTitle: 'Einsatzmodus',
+    companyModeSubtitle: 'Professionelle Oberfläche: Gefahren melden, Teamlage prüfen, aktuelle Meldungen auf der Karte ansteuern.',
+    companyQuickActions: 'Sofortmeldung',
+    companyGeneralDanger: 'Aktuelle Gefahr 6 melden',
+    companyCategories: 'Gefahrenart auswählen',
+    alertHint: 'Diese Meldung ist nachvollziehbar und für registrierte Nutzer sichtbar.',
     alertPlaceholder: 'Kurzbeschreibung, z. B. Unfall oder Gefahr',
     companyTools: 'Gefahrenmeldung',
     companyOverview: 'Einsatzübersicht',
@@ -154,6 +159,8 @@ const texts = {
     privateTools: 'Privatkonto',
     memberLocations: 'Aktuelle Team-Standorte',
     shareMyLocation: 'Meinen Standort teilen',
+    focusMember: 'Anzeigen',
+    lastSeen: 'zuletzt',
     sharingOn: 'Standort wird geteilt',
     sharingOff: 'Standort wird nicht geteilt',
     companyNoMembers: 'Teamstandorte anzeigen',
@@ -263,8 +270,8 @@ const texts = {
     loginIntro: 'Demo login for private and company users. Roles decide which safety controls become visible.',
     privateAccess: 'Private access',
     companyAccess: 'Company access',
-    privateDemo: 'Private demo: anna / 1234',
-    companyDemo: 'Company demo: safeguard1 / 2468',
+    privateDemo: 'Private demo: anna / 12345ab',
+    companyDemo: 'Company demo: safeguard1 / 24680sg',
     loginCode: 'Login code',
     loginPin: 'PIN',
     loginSubmit: 'Log in',
@@ -277,6 +284,11 @@ const texts = {
     emergencyRegistrationHint: 'Company registration required',
     companyOnlyEmergency: 'Emergency is only active for registered company users.',
     companyAlertSelectHint: 'Please choose the type of emergency report.',
+    companyModeTitle: 'Operations mode',
+    companyModeSubtitle: 'Professional interface: report danger, check team status and jump to current alerts on the map.',
+    companyQuickActions: 'Immediate report',
+    companyGeneralDanger: 'Report current danger 6',
+    companyCategories: 'Choose danger type',
     alertHint: 'This report is attributable and visible to registered users.',
     alertPlaceholder: 'Short note, e.g. accident or threat',
     companyTools: 'Danger report',
@@ -293,6 +305,8 @@ const texts = {
     privateTools: 'Private account',
     memberLocations: 'Current team locations',
     shareMyLocation: 'Share my location',
+    focusMember: 'Show',
+    lastSeen: 'last seen',
     sharingOn: 'Location is shared',
     sharingOff: 'Location is not shared',
     companyNoMembers: 'Show team locations',
@@ -453,6 +467,16 @@ function applyDesignMode() {
   }
 }
 
+function applyUserMode() {
+  const isCompany = state.user?.role === 'company';
+  document.body.classList.toggle('company-mode', isCompany);
+  if (isCompany && state.funMode) {
+    state.funMode = false;
+    state.pendingFunPos = null;
+    layers.fun.clearLayers();
+  }
+}
+
 function toggleDesignMode() {
   state.designMode = state.designMode === 'classic' ? 'friendly' : 'classic';
   sessionStorage.setItem(DESIGN_KEY, state.designMode);
@@ -576,6 +600,11 @@ function formatCoords(lat, lng) {
   return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 }
 
+function formatDistance(meters) {
+  if (!Number.isFinite(meters)) return '';
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -630,6 +659,7 @@ function updateTranslations() {
     node.textContent = t(node.dataset.i18n);
   });
   applyDesignMode();
+  applyUserMode();
   searchInput.placeholder = t('searchPlaceholder');
   languageToggle.innerHTML = state.language === 'de' ? '<span>🇩🇪</span><span>DE</span>' : '<span>🇬🇧</span><span>EN</span>';
   loginButton.textContent = state.user ? state.user.name : 'Login';
@@ -1063,6 +1093,7 @@ function downloadCompanyCsv() {
 }
 
 function renderAuthPanel() {
+  applyUserMode();
   registeredPanel.classList.toggle('hidden', !(state.user && state.user.role === 'company'));
   logoutButton.classList.add('hidden');
   emergencyToggle.disabled = false;
@@ -1080,50 +1111,72 @@ function renderAuthPanel() {
   if (state.user.role === 'company') {
     const currentAlerts = currentDangerAlerts();
     const visibleMembers = state.companyMembers.filter((member) => member.location).length;
+    const totalMembers = state.companyMembers.length;
     companyPanel.classList.remove('hidden');
     companyPanel.innerHTML = `
-      <div class="panel-head"><strong>${t('companyTools')}</strong></div>
-      <div class="login-grid">
-        <input id="alertNote" class="alert-note-input" placeholder="${t('alertPlaceholder')}" maxlength="220" />
-        <small>${t('alertHint')}</small>
+      <div class="company-mode-header">
+        <span class="company-mode-kicker">${t('companyModeTitle')}</span>
+        <strong>${t('companyTools')}</strong>
+        <p>${t('companyModeSubtitle')}</p>
       </div>
-      <div class="divider"></div>
-      <div class="company-alert-grid">
-        ${companyAlertTypes
-          .map((type) => `<button type="button" class="company-type-btn company-alert-${type}" data-type="${type}">${t(`alertTypes.${type}`)}</button>`)
-          .join('')}
-      </div>
-      <div class="response-chain-card">
-        <strong>${t('responseChain')}</strong>
-        <span>${t('responseChainText')}</span>
-      </div>
-      <div class="divider"></div>
-      <section class="company-overview-card">
-        <div class="panel-head"><strong>${t('companyOverview')}</strong></div>
+
+      <section class="company-overview-card company-status-card">
+        <div class="panel-head">
+          <strong>${t('companyOverview')}</strong>
+          <span class="company-live-pill">${currentAlerts.length} / 24h</span>
+        </div>
         <div class="company-metrics">
           <div><strong>${currentAlerts.length}</strong><span>${t('activeAlerts24')}</span></div>
-          <div><strong>${visibleMembers}</strong><span>${t('visibleTeam')}</span></div>
+          <div><strong>${visibleMembers}/${totalMembers}</strong><span>${t('visibleTeam')}</span></div>
           <div><strong>${state.shareCompanyLocation ? 'ON' : 'OFF'}</strong><span>${t('ownLocationStatus')}</span></div>
         </div>
         <div class="company-action-row">
           <button id="panelShowAlertsBtn" class="primary-button" type="button">${t('showNextAlert')}</button>
-          <button id="companyExportBtn" class="outline-button" type="button">${t('exportData')}</button>
+          <button id="shareLocationToggle" class="share-location-toggle ${state.shareCompanyLocation ? 'is-on' : 'is-off'}" type="button">
+            ${t('shareMyLocation')}
+          </button>
         </div>
       </section>
-      <div class="divider"></div>
-      <div class="team-location-header">
-        <strong>${t('memberLocations')}</strong>
-        <button id="shareLocationToggle" class="share-location-toggle ${state.shareCompanyLocation ? 'is-on' : 'is-off'}" type="button">
-          ${t('shareMyLocation')}
+
+      <section class="company-operational-card company-danger-card">
+        <div class="panel-head"><strong>${t('companyQuickActions')}</strong></div>
+        <div class="login-grid">
+          <input id="alertNote" class="alert-note-input" placeholder="${t('alertPlaceholder')}" maxlength="220" />
+          <small>${t('alertHint')}</small>
+        </div>
+        <button id="panelDangerBtn" class="company-primary-alert" type="button">
+          <span>6</span>
+          <strong>${t('companyGeneralDanger')}</strong>
         </button>
+        <div class="company-category-title">${t('companyCategories')}</div>
+        <div class="company-alert-grid">
+          ${companyAlertTypes
+            .map((type) => `<button type="button" class="company-type-btn company-alert-${type}" data-type="${type}">${t(`alertTypes.${type}`)}</button>`)
+            .join('')}
+        </div>
+      </section>
+
+      <div class="response-chain-card">
+        <strong>${t('responseChain')}</strong>
+        <span>${t('responseChainText')}</span>
       </div>
-      <div id="memberList"></div>
-      <div class="divider"></div>
-      <div class="panel-head"><strong>${t('recentCompanyAlerts')}</strong></div>
-      <div class="company-feed-list">${renderCompanyAlertList()}</div>
+
+      <section class="company-operational-card">
+        <div class="team-location-header">
+          <strong>${t('memberLocations')}</strong>
+          <button id="companyExportBtn" class="outline-button" type="button">${t('exportData')}</button>
+        </div>
+        <div id="memberList" class="company-member-list"></div>
+      </section>
+
+      <section class="company-operational-card">
+        <div class="panel-head"><strong>${t('recentCompanyAlerts')}</strong></div>
+        <div class="company-feed-list">${renderCompanyAlertList()}</div>
+      </section>
     `;
 
     document.getElementById('panelShowAlertsBtn')?.addEventListener('click', focusNextCurrentAlert);
+    document.getElementById('panelDangerBtn')?.addEventListener('click', () => submitAlert('general'));
     document.getElementById('companyExportBtn')?.addEventListener('click', downloadCompanyCsv);
     companyPanel.querySelectorAll('.company-type-btn').forEach((button) => {
       button.addEventListener('click', () => submitAlert(button.dataset.type));
@@ -1138,11 +1191,30 @@ function renderAuthPanel() {
       state.companyMembers.forEach((member) => {
         const row = document.createElement('div');
         row.className = 'member-row';
+        const distance = state.userPos && member.location
+          ? formatDistance(distanceMeters(state.userPos.lat, state.userPos.lng, member.location.lat, member.location.lng))
+          : '';
+        const updated = member.location?.updatedAt ? formatDate(member.location.updatedAt) : '-';
         row.innerHTML = `
-          <span>${member.name}</span>
-          <span>${member.location ? formatCoords(member.location.lat, member.location.lng) : '-'}</span>
+          <span class="member-main">
+            <strong>${escapeHtml(member.name)}</strong>
+            <small>${distance ? `${escapeHtml(distance)} · ` : ''}${t('lastSeen')} ${escapeHtml(updated)}</small>
+          </span>
+          ${
+            member.location
+              ? `<button class="ghost-button tiny member-focus-btn" data-member-id="${escapeHtml(member.id)}" type="button">${t('focusMember')}</button>`
+              : '<span class="member-offline">-</span>'
+          }
         `;
         memberList.appendChild(row);
+      });
+      memberList.querySelectorAll('.member-focus-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+          const member = state.companyMembers.find((entry) => entry.id === button.dataset.memberId);
+          if (member?.location) {
+            map.flyTo([member.location.lat, member.location.lng], Math.max(map.getZoom(), 16), { duration: 0.55 });
+          }
+        });
       });
     }
   } else {
