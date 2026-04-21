@@ -1117,9 +1117,7 @@ function renderAuthPanel() {
     companyPanel.classList.remove('hidden');
     companyPanel.innerHTML = `
       <div class="company-mode-header">
-        <span class="company-mode-kicker">${t('companyModeTitle')}</span>
-        <strong>${t('companyTools')}</strong>
-        <p>${t('companyModeSubtitle')}</p>
+        <strong>${t('companyModeTitle')}</strong>
       </div>
 
       <section class="company-overview-card company-status-card">
