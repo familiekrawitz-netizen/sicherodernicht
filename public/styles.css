@@ -1286,9 +1286,22 @@ body.design-friendly .company-metrics div {
   min-width: 0;
 }
 
-.partner-ad-copy strong {
+.partner-ad-copy strong,
+.partner-ad-link {
   display: block;
   margin-bottom: 4px;
+}
+
+.partner-ad-link {
+  color: var(--text);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.partner-ad-link:hover,
+.partner-ad-link:focus-visible {
+  color: #c9003f;
+  text-decoration: underline;
 }
 
 .partner-ad-copy p {
