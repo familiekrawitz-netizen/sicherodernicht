@@ -143,6 +143,7 @@ const texts = {
     companyQuickActions: 'Sofortmeldung',
     companyGeneralDanger: 'Aktuelle Gefahr 6 melden',
     companyCategories: 'Gefahrenart auswählen',
+    companyPublicRatings: 'Lagebewertung 5 bis 1',
     alertHint: 'Diese Meldung ist nachvollziehbar und für registrierte Nutzer sichtbar.',
     alertPlaceholder: 'Kurzbeschreibung, z. B. Unfall oder Gefahr',
     companyTools: 'Gefahrenmeldung',
@@ -289,6 +290,7 @@ const texts = {
     companyQuickActions: 'Immediate report',
     companyGeneralDanger: 'Report current danger 6',
     companyCategories: 'Choose danger type',
+    companyPublicRatings: 'Area rating 5 to 1',
     alertHint: 'This report is attributable and visible to registered users.',
     alertPlaceholder: 'Short note, e.g. accident or threat',
     companyTools: 'Danger report',
@@ -1156,6 +1158,15 @@ function renderAuthPanel() {
         </div>
       </section>
 
+      <section class="company-operational-card company-rating-card">
+        <div class="panel-head"><strong>${t('companyPublicRatings')}</strong></div>
+        <div class="company-rating-grid">
+          ${[5, 4, 3, 2, 1]
+            .map((score) => `<button type="button" class="score-button score-${score}" data-company-score="${score}" data-label="${t(`scores.${score}`)}">${score}</button>`)
+            .join('')}
+        </div>
+      </section>
+
       <div class="response-chain-card">
         <strong>${t('responseChain')}</strong>
         <span>${t('responseChainText')}</span>
@@ -1180,6 +1191,9 @@ function renderAuthPanel() {
     document.getElementById('companyExportBtn')?.addEventListener('click', downloadCompanyCsv);
     companyPanel.querySelectorAll('.company-type-btn').forEach((button) => {
       button.addEventListener('click', () => submitAlert(button.dataset.type));
+    });
+    companyPanel.querySelectorAll('[data-company-score]').forEach((button) => {
+      button.addEventListener('click', () => submitRating(Number(button.dataset.companyScore)));
     });
     document.getElementById('shareLocationToggle')?.addEventListener('click', toggleCompanyLocationSharing);
 

@@ -1354,6 +1354,21 @@ body.company-mode #registeredPanel {
   color: #334155;
 }
 
+.company-rating-card {
+  gap: 10px;
+}
+
+.company-rating-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.company-rating-grid .score-button {
+  min-height: 54px;
+  border-radius: 16px;
+}
+
 body.company-mode .company-overview-card,
 body.company-mode .response-chain-card,
 body.company-mode .company-feed-row,
@@ -1383,6 +1398,11 @@ body.company-mode .text-button {
   background: rgba(255, 255, 255, 0.78);
   color: #0f172a;
   border-color: rgba(51, 65, 85, 0.18);
+}
+
+body.company-mode .company-rating-grid .score-button {
+  color: #07111f;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
 .company-member-list {
