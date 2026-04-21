@@ -1165,11 +1165,6 @@ function renderAuthPanel() {
         </div>
       </section>
 
-      <div class="response-chain-card">
-        <strong>${t('responseChain')}</strong>
-        <span>${t('responseChainText')}</span>
-      </div>
-
       <section class="company-operational-card">
         <div class="team-location-header">
           <strong>${t('memberLocations')}</strong>
