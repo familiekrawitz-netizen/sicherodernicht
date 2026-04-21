@@ -977,6 +977,83 @@ a:hover {
   gap: 12px;
 }
 
+.company-overview-card,
+.response-chain-card,
+.company-feed-row {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.company-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.company-metrics div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.company-metrics strong {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.company-metrics span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.company-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.response-chain-card {
+  display: grid;
+  gap: 4px;
+  border-color: rgba(96, 165, 250, 0.2);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.13), rgba(20, 184, 166, 0.11));
+}
+
+.response-chain-card span,
+.company-feed-row span,
+.company-feed-row small {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.company-feed-list {
+  display: grid;
+  gap: 8px;
+}
+
+.company-feed-row {
+  display: grid;
+  gap: 3px;
+}
+
+body.design-friendly .company-overview-card,
+body.design-friendly .response-chain-card,
+body.design-friendly .company-feed-row,
+body.design-friendly .company-metrics div {
+  background: rgba(255, 255, 255, 0.64);
+  border-color: rgba(42, 68, 63, 0.1);
+}
+
 .access-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2108,6 +2185,11 @@ body.design-friendly .ad-card strong::before {
   }
 
   .team-location-header {
+    grid-template-columns: 1fr;
+  }
+
+  .company-metrics,
+  .company-action-row {
     grid-template-columns: 1fr;
   }
 

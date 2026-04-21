@@ -43,6 +43,7 @@ const state = {
   mapData: null,
   areaData: null,
   companyMembers: [],
+  companyAlerts: [],
   searchResults: [],
   cellCircles: [],
   followUser: false,
@@ -143,6 +144,16 @@ const texts = {
     alertHint: 'Diese Meldung ist nachvollziehbar und fur registrierte Nutzer sichtbar.',
     alertPlaceholder: 'Kurzbeschreibung, z. B. Unfall oder Gefahr',
     companyTools: 'Gefahrenmeldung',
+    companyOverview: 'Einsatzübersicht',
+    activeAlerts24: 'Gefahren letzte 24h',
+    visibleTeam: 'sichtbare Teamstandorte',
+    ownLocationStatus: 'Eigener Standort',
+    showNextAlert: 'Aktuelle Gefahr zeigen',
+    exportData: 'Export CSV',
+    responseChain: 'Rettungskette',
+    responseChainText: 'Lage prüfen, Team warnen, bei akuter Gefahr 110 anrufen. Meldung kurz, sachlich und ohne unnötige Personendaten erfassen.',
+    recentCompanyAlerts: 'Letzte Firmenmeldungen',
+    noCompanyAlerts: 'Noch keine Firmenmeldungen',
     privateTools: 'Privatkonto',
     memberLocations: 'Aktuelle Team-Standorte',
     shareMyLocation: 'Meinen Standort teilen',
@@ -275,6 +286,16 @@ const texts = {
     alertHint: 'This report is attributable and visible to registered users.',
     alertPlaceholder: 'Short note, e.g. accident or threat',
     companyTools: 'Danger report',
+    companyOverview: 'Operations overview',
+    activeAlerts24: 'Dangers last 24h',
+    visibleTeam: 'visible team locations',
+    ownLocationStatus: 'Own location',
+    showNextAlert: 'Show current danger',
+    exportData: 'Export CSV',
+    responseChain: 'Response chain',
+    responseChainText: 'Check the situation, warn the team, call 110 in immediate danger. Keep reports short, factual and free of unnecessary personal data.',
+    recentCompanyAlerts: 'Recent company reports',
+    noCompanyAlerts: 'No company reports yet',
     privateTools: 'Private account',
     memberLocations: 'Current team locations',
     shareMyLocation: 'Share my location',
@@ -511,6 +532,15 @@ function formatDate(value) {
 
 function formatCoords(lat, lng) {
   return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function showStatus(message) {
@@ -938,6 +968,58 @@ function renderAreaSummary() {
   `;
 }
 
+function renderCompanyAlertList() {
+  const alerts = [...state.companyAlerts]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3);
+
+  if (!alerts.length) {
+    return `<div class="member-row team-locations-empty">${t('noCompanyAlerts')}</div>`;
+  }
+
+  return alerts
+    .map(
+      (alert) => `
+        <div class="company-feed-row">
+          <strong>${t(`alertTypes.${alert.alertType}`) || t('alertTypes.general')}</strong>
+          <span>${formatDate(alert.createdAt)}</span>
+          ${alert.note ? `<small>${escapeHtml(alert.note)}</small>` : ''}
+        </div>
+      `
+    )
+    .join('');
+}
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return /[",\n\r;]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function downloadCompanyCsv() {
+  const rows = [
+    ['createdAt', 'category', 'reporterName', 'companyName', 'lat', 'lng', 'note'],
+    ...state.companyAlerts.map((alert) => [
+      alert.createdAt,
+      t(`alertTypes.${alert.alertType}`) || alert.alertType || 'general',
+      alert.reporter?.name || '',
+      alert.reporter?.companyName || state.user?.companyName || '',
+      alert.lat,
+      alert.lng,
+      alert.note || ''
+    ])
+  ];
+  const csv = rows.map((row) => row.map(csvCell).join(';')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `am-i-safe-firmenmeldungen-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function renderAuthPanel() {
   registeredPanel.classList.toggle('hidden', !(state.user && state.user.role === 'company'));
   logoutButton.classList.add('hidden');
@@ -954,8 +1036,22 @@ function renderAuthPanel() {
   authPanel.innerHTML = '';
 
   if (state.user.role === 'company') {
+    const currentAlerts = currentDangerAlerts();
+    const visibleMembers = state.companyMembers.filter((member) => member.location).length;
     companyPanel.classList.remove('hidden');
     companyPanel.innerHTML = `
+      <section class="company-overview-card">
+        <div class="panel-head"><strong>${t('companyOverview')}</strong></div>
+        <div class="company-metrics">
+          <div><strong>${currentAlerts.length}</strong><span>${t('activeAlerts24')}</span></div>
+          <div><strong>${visibleMembers}</strong><span>${t('visibleTeam')}</span></div>
+          <div><strong>${state.shareCompanyLocation ? 'ON' : 'OFF'}</strong><span>${t('ownLocationStatus')}</span></div>
+        </div>
+        <div class="company-action-row">
+          <button id="panelShowAlertsBtn" class="primary-button" type="button">${t('showNextAlert')}</button>
+          <button id="companyExportBtn" class="outline-button" type="button">${t('exportData')}</button>
+        </div>
+      </section>
       <div class="panel-head"><strong>${t('companyTools')}</strong></div>
       <div class="login-grid">
         <input id="alertNote" class="alert-note-input" placeholder="${t('alertPlaceholder')}" maxlength="220" />
@@ -967,6 +1063,10 @@ function renderAuthPanel() {
           .map((type) => `<button type="button" class="company-type-btn company-alert-${type}" data-type="${type}">${t(`alertTypes.${type}`)}</button>`)
           .join('')}
       </div>
+      <div class="response-chain-card">
+        <strong>${t('responseChain')}</strong>
+        <span>${t('responseChainText')}</span>
+      </div>
       <div class="divider"></div>
       <div class="team-location-header">
         <strong>${t('memberLocations')}</strong>
@@ -975,8 +1075,13 @@ function renderAuthPanel() {
         </button>
       </div>
       <div id="memberList"></div>
+      <div class="divider"></div>
+      <div class="panel-head"><strong>${t('recentCompanyAlerts')}</strong></div>
+      <div class="company-feed-list">${renderCompanyAlertList()}</div>
     `;
 
+    document.getElementById('panelShowAlertsBtn')?.addEventListener('click', focusNextCurrentAlert);
+    document.getElementById('companyExportBtn')?.addEventListener('click', downloadCompanyCsv);
     companyPanel.querySelectorAll('.company-type-btn').forEach((button) => {
       button.addEventListener('click', () => submitAlert(button.dataset.type));
     });
@@ -1288,6 +1393,7 @@ async function loadProfile() {
   if (!state.token) {
     state.user = null;
     state.companyMembers = [];
+    state.companyAlerts = [];
     renderAuthPanel();
     return;
   }
@@ -1295,6 +1401,12 @@ async function loadProfile() {
     const payload = await api(`/api/me?token=${encodeURIComponent(state.token)}`);
     state.user = payload.user;
     state.companyMembers = payload.companyMembers || [];
+    if (state.user?.role === 'company') {
+      const feed = await api(`/api/company-feed?token=${encodeURIComponent(state.token)}`).catch(() => null);
+      state.companyAlerts = feed?.alerts || [];
+    } else {
+      state.companyAlerts = [];
+    }
     loginButton.textContent = state.user.name;
     updateCurrentAlertsButton();
   } catch {
@@ -1303,6 +1415,7 @@ async function loadProfile() {
     localStorage.removeItem('am-i-safe-token');
     state.user = null;
     state.companyMembers = [];
+    state.companyAlerts = [];
   }
   renderAuthPanel();
   loadTicker().catch(() => {});
@@ -1390,6 +1503,7 @@ async function logout() {
   localStorage.removeItem('am-i-safe-token');
   state.user = null;
   state.companyMembers = [];
+  state.companyAlerts = [];
   state.currentAlertIndex = -1;
   loginButton.textContent = 'Login';
   loginPopover.classList.add('hidden');
