@@ -1722,6 +1722,11 @@ body.design-friendly .ad-card strong::before {
   color: var(--text);
 }
 
+.legal-warning {
+  background: rgba(255, 191, 71, 0.13);
+  border-color: rgba(255, 191, 71, 0.34);
+}
+
 .legal-card h2 {
   margin: 0 0 14px;
 }
@@ -1743,9 +1748,56 @@ body.design-friendly .ad-card strong::before {
   line-height: 1.6;
 }
 
+.legal-card a {
+  color: inherit;
+  font-weight: 800;
+}
+
 .legal-card p + p,
 .legal-card ul {
   margin-top: 10px;
+}
+
+.legal-wide-card {
+  margin-top: 14px;
+}
+
+.legal-small {
+  margin-top: 14px !important;
+  color: var(--muted) !important;
+  font-size: 0.86rem;
+}
+
+.legal-table-wrap {
+  overflow-x: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.legal-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.legal-table th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.legal-table tr:last-child td {
+  border-bottom: none;
 }
 
 .admin-grid {
