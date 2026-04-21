@@ -58,6 +58,12 @@
               </div>
             </section>
 
+            <form id="searchForm" class="search-form">
+              <input id="searchInput" type="search" autocomplete="off" spellcheck="false" />
+              <button class="ghost-button" type="submit" data-i18n="search">Suchen</button>
+            </form>
+            <div id="searchResults" class="search-results"></div>
+
             <section id="registeredPanel" class="panel-card hidden">
               <button id="logoutButton" class="text-button hidden" type="button" data-i18n="logout">Logout</button>
               <div id="authPanel" class="auth-panel"></div>
@@ -98,12 +104,6 @@
               </span>
               <a class="outline-button" href="/sicherheit.html" data-i18n="needSecurity">Ich brauche mehr Sicherheit</a>
             </div>
-
-            <form id="searchForm" class="search-form">
-              <input id="searchInput" type="search" autocomplete="off" spellcheck="false" />
-              <button class="ghost-button" type="submit" data-i18n="search">Suchen</button>
-            </form>
-            <div id="searchResults" class="search-results"></div>
 
             <p id="submitStatus" class="status-line"></p>
           </section>
@@ -176,7 +176,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=59"></script>
+    <script src="/app.js?v=60"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
