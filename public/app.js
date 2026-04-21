@@ -485,9 +485,12 @@ function circleOpacityForZoom() {
 }
 
 function updateCircleOpacity() {
-  const { fillOpacity, opacity } = circleOpacityForZoom();
-  state.cellCircles.forEach((circle) => {
-    circle.setStyle({ fillOpacity, opacity });
+  const { cloudAlpha, cloudSize } = ratingCloudMetricsForZoom();
+  state.cellCircles.forEach((cloud) => {
+    const element = cloud.getElement?.()?.querySelector('.rating-cloud-visual');
+    if (!element) return;
+    element.style.setProperty('--cloud-alpha', cloudAlpha);
+    element.style.setProperty('--cloud-size', `${cloudSize}px`);
   });
 }
 
@@ -506,33 +509,34 @@ function offsetLatLng(lat, lng, northMeters, eastMeters) {
   return [lat + latOffset, lng + lngOffset];
 }
 
-function ratingCloudPoints(cell) {
-  const seed = cell.cellId || `${cell.lat}:${cell.lng}:${cell.averageScore}`;
-  const zoomPhase = Math.round((map?.getZoom?.() || 13) * 2);
-  const shiftAngle = seededUnit(`${seed}:shift-angle`) * Math.PI * 2;
-  const shiftMeters = 22 + seededUnit(`${seed}:shift-distance`) * 34;
-  const centerNorth = Math.sin(shiftAngle) * shiftMeters;
-  const centerEast = Math.cos(shiftAngle) * shiftMeters;
-  const pointCount = 14;
-
-  return Array.from({ length: pointCount }, (_, index) => {
-    const angle = (Math.PI * 2 * index) / pointCount;
-    const waveA = Math.sin(angle * 3 + seededUnit(`${seed}:a`) * Math.PI * 2) * 14;
-    const waveB = Math.cos(angle * 5 + seededUnit(`${seed}:b`) * Math.PI * 2) * 10;
-    const jitter = (seededUnit(`${seed}:point:${index}`) - 0.5) * 22;
-    const zoomMorph = (seededUnit(`${seed}:morph:${zoomPhase}:${index}`) - 0.5) * 8;
-    const radius = 82 + waveA + waveB + jitter + zoomMorph;
-    const north = centerNorth + Math.sin(angle) * radius;
-    const east = centerEast + Math.cos(angle) * radius * (0.9 + seededUnit(`${seed}:squash`) * 0.18);
-    return offsetLatLng(cell.lat, cell.lng, north, east);
-  });
-}
-
 function ratingCloudAnchor(cell) {
   const seed = cell.cellId || `${cell.lat}:${cell.lng}:${cell.averageScore}`;
   const angle = seededUnit(`${seed}:label-angle`) * Math.PI * 2;
   const distance = 18 + seededUnit(`${seed}:label-distance`) * 22;
   return offsetLatLng(cell.lat, cell.lng, Math.sin(angle) * distance, Math.cos(angle) * distance);
+}
+
+function ratingCloudMetricsForZoom() {
+  const zoom = map.getZoom();
+  const normalized = Math.max(0, Math.min(1, (zoom - 10) / 8));
+  return {
+    cloudAlpha: Number((0.16 + normalized * 0.46).toFixed(3)),
+    cloudSize: Math.round(46 + normalized * 98)
+  };
+}
+
+function ratingCloudIcon(cell) {
+  const seed = cell.cellId || `${cell.lat}:${cell.lng}:${cell.averageScore}`;
+  const { cloudAlpha, cloudSize } = ratingCloudMetricsForZoom();
+  const color = scoreColor(cell.averageScore);
+  const delay = Number((seededUnit(`${seed}:delay`) * 7).toFixed(2));
+  const rotate = Math.round((seededUnit(`${seed}:rotate`) - 0.5) * 14);
+  return iconHtml(
+    `<div class="rating-cloud-visual" style="--cloud-color:${color}; --cloud-alpha:${cloudAlpha}; --cloud-size:${cloudSize}px; --cloud-delay:-${delay}s; --cloud-rotate:${rotate}deg"></div>`,
+    'rating-cloud-marker',
+    [cloudSize, Math.round(cloudSize * 0.68)],
+    [Math.round(cloudSize * 0.5), Math.round(cloudSize * 0.34)]
+  );
 }
 
 function markerDetailLevel() {
@@ -1278,11 +1282,16 @@ function renderMap() {
 
   const data = state.legendFilter?.data || state.mapData;
   if (!data) return;
-  const { fillOpacity, opacity } = circleOpacityForZoom();
-
   data.cells.forEach((cell) => {
     const displayScore = Number(cell.averageScore.toFixed(1));
     const markerUi = markerContent(cell, displayScore);
+    const cloudMarker = L.marker(ratingCloudAnchor(cell), {
+      icon: ratingCloudIcon(cell),
+      interactive: false,
+      keyboard: false
+    }).addTo(layers.effects);
+    state.cellCircles.push(cloudMarker);
+
     const marker = L.marker(ratingCloudAnchor(cell), {
       icon: iconHtml(
         `<div class="cell-bubble ${markerUi.className} ${cell.averageScore <= 1.5 ? 'cell-excellent' : ''} ${cell.averageScore >= 4.5 ? 'cell-danger' : ''}" style="background:${scoreColor(cell.averageScore)}cc; color:${scoreColor(cell.averageScore)}" data-count="${cell.count}">
@@ -1298,18 +1307,6 @@ function renderMap() {
       ${formatDate(cell.lastReportAt)}
     `);
     marker.addTo(layers.cells);
-
-    const cloud = L.polygon(ratingCloudPoints(cell), {
-      color: scoreColor(cell.averageScore),
-      fillColor: scoreColor(cell.averageScore),
-      fillOpacity,
-      opacity,
-      weight: 1.4,
-      interactive: false,
-      className: 'rating-cloud',
-      smoothFactor: 1.2
-    }).addTo(layers.effects);
-    state.cellCircles.push(cloud);
   });
 
   data.funReports.forEach((entry) => {

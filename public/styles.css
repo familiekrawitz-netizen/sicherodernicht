@@ -1400,6 +1400,7 @@ body.design-friendly .ad-card strong::before {
 }
 
 .cell-marker,
+.rating-cloud-marker,
 .fun-marker,
 .poi-marker,
 .arrow-marker,
@@ -1410,10 +1411,55 @@ body.design-friendly .ad-card strong::before {
   border: none;
 }
 
-.rating-cloud {
-  filter: blur(0.4px);
+.rating-cloud-marker {
+  pointer-events: none;
+}
+
+.rating-cloud-visual {
+  position: relative;
+  width: var(--cloud-size);
+  height: calc(var(--cloud-size) * 0.62);
+  opacity: var(--cloud-alpha);
+  transform: rotate(var(--cloud-rotate));
+  transform-origin: 48% 52%;
+  filter: blur(0.35px) drop-shadow(0 10px 18px rgba(15, 23, 42, 0.1));
   mix-blend-mode: multiply;
-  transition: fill-opacity 0.25s ease, stroke-opacity 0.25s ease;
+  animation: ratingCloudMorph 8.6s ease-in-out infinite;
+  animation-delay: var(--cloud-delay);
+  transition: width 0.18s ease, height 0.18s ease, opacity 0.22s ease;
+}
+
+.rating-cloud-visual,
+.rating-cloud-visual::before,
+.rating-cloud-visual::after {
+  background:
+    radial-gradient(circle at 18% 58%, var(--cloud-color) 0 21%, transparent 22%),
+    radial-gradient(circle at 34% 39%, var(--cloud-color) 0 29%, transparent 30%),
+    radial-gradient(circle at 55% 35%, var(--cloud-color) 0 33%, transparent 34%),
+    radial-gradient(circle at 76% 54%, var(--cloud-color) 0 25%, transparent 26%),
+    radial-gradient(ellipse at 52% 68%, var(--cloud-color) 0 43%, transparent 44%);
+}
+
+.rating-cloud-visual::before,
+.rating-cloud-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+  transform-origin: 54% 54%;
+}
+
+.rating-cloud-visual::before {
+  transform: translate(-6%, 4%) scale(1.08, 0.92);
+  animation: ratingCloudLobes 7.2s ease-in-out infinite;
+  animation-delay: calc(var(--cloud-delay) - 0.8s);
+}
+
+.rating-cloud-visual::after {
+  opacity: 0.22;
+  transform: translate(7%, -3%) scale(0.86, 1.08);
+  animation: ratingCloudLobes 6.4s ease-in-out infinite reverse;
+  animation-delay: calc(var(--cloud-delay) - 1.6s);
 }
 
 .cell-bubble {
@@ -2070,6 +2116,31 @@ body.design-friendly .ad-card strong::before {
   }
   50% {
     transform: rotate(5deg) scale(1.06);
+  }
+}
+
+@keyframes ratingCloudMorph {
+  0%,
+  100% {
+    transform: rotate(var(--cloud-rotate)) scale(1, 1);
+  }
+  45% {
+    transform: rotate(calc(var(--cloud-rotate) + 2deg)) scale(1.05, 0.96);
+  }
+  72% {
+    transform: rotate(calc(var(--cloud-rotate) - 1deg)) scale(0.98, 1.04);
+  }
+}
+
+@keyframes ratingCloudLobes {
+  0%,
+  100% {
+    border-radius: 48% 52% 45% 55%;
+    transform: translate(-5%, 3%) scale(1.04, 0.96);
+  }
+  50% {
+    border-radius: 56% 44% 58% 42%;
+    transform: translate(4%, -2%) scale(0.96, 1.08);
   }
 }
 
