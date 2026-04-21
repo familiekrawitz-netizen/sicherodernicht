@@ -624,12 +624,54 @@ button,
   border: 1px solid transparent;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:hover,
 a:hover {
   transform: translateY(-1px);
+}
+
+button:active,
+.outline-button:active,
+.ghost-button:active,
+.primary-button:active,
+.warn-button:active,
+.company-type-btn:active,
+.score-button:active,
+.fun-invite:active,
+.current-alerts-button:active,
+.share-location-toggle:active,
+.company-primary-alert:active,
+.legend-show-button:active {
+  transform: translateY(1px) scale(0.97);
+  filter: brightness(0.94) saturate(1.08);
+  box-shadow: inset 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+button:focus-visible,
+.outline-button:focus-visible,
+.ghost-button:focus-visible,
+.primary-button:focus-visible,
+.warn-button:focus-visible,
+.company-type-btn:focus-visible,
+.score-button:focus-visible,
+.fun-invite:focus-visible,
+.current-alerts-button:focus-visible,
+.share-location-toggle:focus-visible,
+.company-primary-alert:focus-visible,
+.legend-show-button:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.72);
+  outline-offset: 3px;
+}
+
+button:disabled:active,
+.current-alerts-button:disabled:active,
+.warn-button:disabled:active {
+  transform: none;
+  filter: saturate(0.75);
+  box-shadow: none;
 }
 
 .primary-button {
