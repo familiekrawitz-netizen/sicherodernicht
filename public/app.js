@@ -1168,7 +1168,6 @@ function renderAuthPanel() {
       <section class="company-operational-card">
         <div class="team-location-header">
           <strong>${t('memberLocations')}</strong>
-          <button id="companyExportBtn" class="outline-button" type="button">${t('exportData')}</button>
         </div>
         <div id="memberList" class="company-member-list"></div>
       </section>
@@ -1181,7 +1180,6 @@ function renderAuthPanel() {
 
     document.getElementById('panelShowAlertsBtn')?.addEventListener('click', focusNextCurrentAlert);
     document.getElementById('panelDangerBtn')?.addEventListener('click', () => submitAlert('general'));
-    document.getElementById('companyExportBtn')?.addEventListener('click', downloadCompanyCsv);
     companyPanel.querySelectorAll('.company-type-btn').forEach((button) => {
       button.addEventListener('click', () => submitAlert(button.dataset.type));
     });
