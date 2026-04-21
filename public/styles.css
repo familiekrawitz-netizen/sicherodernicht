@@ -483,6 +483,7 @@ body.design-classic .market-strip span {
   cursor: pointer;
   overflow: hidden;
   text-align: left;
+  animation: funInviteNudge 7s ease-in-out infinite;
 }
 
 .fun-invite::before {
@@ -495,6 +496,23 @@ body.design-classic .market-strip span {
     radial-gradient(circle at 8% 18%, rgba(255, 255, 255, 0.92) 0 7%, transparent 8%),
     linear-gradient(135deg, rgba(255, 79, 163, 0.18), rgba(255, 207, 74, 0.14), rgba(56, 189, 248, 0.14));
   animation: funInviteBreath 4.8s ease-in-out infinite;
+}
+
+.fun-invite::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 12px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    12px 8px 0 rgba(255, 255, 255, 0.42),
+    -7px 16px 0 rgba(255, 207, 74, 0.48);
+  opacity: 0;
+  pointer-events: none;
+  animation: funInviteSparkle 5.6s ease-in-out infinite;
 }
 
 .fun-invite-icon {
@@ -535,6 +553,7 @@ body.design-classic .market-strip span {
     linear-gradient(135deg, rgba(255, 245, 252, 0.96), rgba(239, 253, 246, 0.88)),
     linear-gradient(135deg, #ff4fa3, #ffd166, #48d6a9, #5aa7ff);
   box-shadow: 0 14px 32px rgba(255, 207, 74, 0.22), 0 0 0 3px rgba(20, 184, 166, 0.08);
+  animation-duration: 4.8s;
 }
 
 .meta-pill,
@@ -1875,6 +1894,37 @@ body.design-friendly .ad-card strong::before {
   50% {
     opacity: 1;
     transform: scale(1.015);
+  }
+}
+
+@keyframes funInviteNudge {
+  0%,
+  74%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  79% {
+    transform: translateY(-2px) scale(1.012);
+  }
+  84% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes funInviteSparkle {
+  0%,
+  62%,
+  100% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.72);
+  }
+  70% {
+    opacity: 0.95;
+    transform: translateY(0) scale(1);
+  }
+  78% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.84);
   }
 }
 
