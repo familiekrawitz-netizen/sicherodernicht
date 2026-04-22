@@ -1,5 +1,4 @@
 const CONSENT_KEY = 'sicherodernicht-consent-v1';
-const DESIGN_KEY = 'sicherodernicht-design-mode';
 
 function storedConsent() {
   try {
@@ -18,18 +17,13 @@ function cleanupComfortStorage() {
   localStorage.removeItem('sicherodernicht-share-company-location');
   localStorage.removeItem('sicherodernicht-login-code');
   localStorage.removeItem('sicherodernicht-login-pin');
-  localStorage.removeItem(DESIGN_KEY);
+  localStorage.removeItem('sicherodernicht-design-mode');
 }
 
 function rememberComfortValue(key, value) {
   if (hasComfortConsent()) {
     localStorage.setItem(key, value);
   }
-}
-
-function storedDesignMode() {
-  const saved = hasComfortConsent() ? localStorage.getItem(DESIGN_KEY) : sessionStorage.getItem(DESIGN_KEY);
-  return saved === 'classic' ? 'classic' : 'friendly';
 }
 
 const state = {
@@ -51,8 +45,7 @@ const state = {
   tickerItems: [],
   legendFilter: null,
   currentAlertIndex: -1,
-  shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('sicherodernicht-share-company-location') !== 'off' : true,
-  designMode: storedDesignMode()
+  shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('sicherodernicht-share-company-location') !== 'off' : true
 };
 
 const texts = {
@@ -97,8 +90,6 @@ const texts = {
     logout: 'Logout',
     adTitle: 'biss-berlin.com',
     bannerCopy: 'Präsentiert von der Berliner Initiative sichere Stadt e.V.',
-    designClassic: 'Klassisches Design',
-    designFriendly: 'Freundliches Design',
     excellentNearby: 'Pfeile zeigen zum nachsten sehr gut bewerteten Ort',
     centerMap: 'Zentrieren',
     searchPlaceholder: 'Ort suchen oder ausprobieren: Alexanderplatz',
@@ -247,8 +238,6 @@ const texts = {
     logout: 'Logout',
     adTitle: 'biss-berlin.com',
     bannerCopy: 'Presented by Berliner Initiative sichere Stadt e.V.',
-    designClassic: 'Classic design',
-    designFriendly: 'Friendly design',
     excellentNearby: 'Arrows point to the next very well rated area',
     centerMap: 'Center',
     searchPlaceholder: 'Search place or try: Alexanderplatz',
@@ -426,7 +415,6 @@ const necessaryConsentBtn = document.getElementById('necessaryConsentBtn');
 const saveConsentBtn = document.getElementById('saveConsentBtn');
 const acceptComfortBtn = document.getElementById('acceptComfortBtn');
 const cookieSettingsBtn = document.getElementById('cookieSettingsBtn');
-const designToggleBtn = document.getElementById('designToggleBtn');
 
 const viewOptions = ['today', 'week', 'month', 'year'];
 
@@ -453,24 +441,13 @@ function saveConsent(comfort) {
     cleanupComfortStorage();
     state.language = 'de';
     state.shareCompanyLocation = true;
-    state.designMode = 'friendly';
   } else {
     rememberComfortValue('sicherodernicht-language', state.language);
     rememberComfortValue('sicherodernicht-share-company-location', state.shareCompanyLocation ? 'on' : 'off');
-    rememberComfortValue(DESIGN_KEY, state.designMode);
   }
 
   consentBanner.classList.add('hidden');
-  applyDesignMode();
   updateTranslations();
-}
-
-function applyDesignMode() {
-  document.body.classList.toggle('design-classic', state.designMode === 'classic');
-  document.body.classList.toggle('design-friendly', state.designMode !== 'classic');
-  if (designToggleBtn) {
-    designToggleBtn.textContent = state.designMode === 'classic' ? t('designFriendly') : t('designClassic');
-  }
 }
 
 function applyUserMode() {
@@ -481,14 +458,6 @@ function applyUserMode() {
     state.pendingFunPos = null;
     layers.fun.clearLayers();
   }
-}
-
-function toggleDesignMode() {
-  state.designMode = state.designMode === 'classic' ? 'friendly' : 'classic';
-  sessionStorage.setItem(DESIGN_KEY, state.designMode);
-  rememberComfortValue(DESIGN_KEY, state.designMode);
-  applyDesignMode();
-  window.setTimeout(() => map.invalidateSize(), 120);
 }
 
 function scoreColor(score) {
@@ -664,7 +633,6 @@ function updateTranslations() {
   document.querySelectorAll('[data-i18n]').forEach((node) => {
     node.textContent = t(node.dataset.i18n);
   });
-  applyDesignMode();
   applyUserMode();
   searchInput.placeholder = t('searchPlaceholder');
   languageToggle.innerHTML = state.language === 'de' ? '<span>🇩🇪</span><span>DE</span>' : '<span>🇬🇧</span><span>EN</span>';
@@ -1883,7 +1851,6 @@ window.addEventListener('resize', () => {
 window.addEventListener('pagehide', logoutOnAppClose);
 
 languageToggle.addEventListener('click', toggleLanguage);
-designToggleBtn.addEventListener('click', toggleDesignMode);
 cookieSettingsBtn.addEventListener('click', () => showConsentBanner(true));
 necessaryConsentBtn.addEventListener('click', () => saveConsent(false));
 saveConsentBtn.addEventListener('click', () => saveConsent(comfortConsentInput.checked));
@@ -1914,7 +1881,6 @@ loginButton.addEventListener('click', () => {
 });
 
 async function bootstrap() {
-  applyDesignMode();
   showConsentBanner();
   const bootstrapData = await api('/api/bootstrap');
   state.mapData = { companies: bootstrapData.companies, emergencyPlaces: bootstrapData.emergencyPlaces, cells: [], alerts: [], funReports: [] };
