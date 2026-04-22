@@ -795,8 +795,9 @@ function renderReportTicker() {
 
   const tickerCategory = (item) => {
     if (item.categoryType === 'summary' && item.score) {
-      const label = t(`tickerScores.${item.score}`) || t(`scores.${item.score}`);
-      return `${label}: ${item.count} ${item.count === 1 ? t('reportSingular') : t('reportPlural')}`;
+      const label = item.score === 6 ? t(`tickerScores.${item.score}`) : t(`scores.${item.score}`);
+      const category = label.charAt(0).toLowerCase() + label.slice(1);
+      return `${t('reportPlural')} ${category}: ${item.count}`;
     }
     if (item.categoryType === 'score' && item.score) {
       return `${item.score} - ${t(`scores.${item.score}`)}`;
@@ -819,7 +820,7 @@ function renderReportTicker() {
           (item) => `
             <span class="report-chip ${item.isCritical ? 'is-critical' : ''}">
               <strong>${tickerCategory(item)}</strong>
-              ${item.categoryType === 'summary' ? `<span class="report-time">${t('last24Hours')}</span>` : `<span>${item.place || item.message || t('noAreaData')}</span><span class="report-time">${formatDate(item.createdAt)}</span>`}
+              ${item.categoryType === 'summary' ? `<span class="report-time">${t('todayMode')}</span>` : `<span>${item.place || item.message || t('noAreaData')}</span><span class="report-time">${formatDate(item.createdAt)}</span>`}
             </span>
           `
         )

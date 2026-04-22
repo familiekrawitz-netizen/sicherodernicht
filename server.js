@@ -577,7 +577,9 @@ function shortLocationLabel(store, lat, lng) {
 
 function aggregateTickerItems(store) {
   const now = Date.now();
-  const cutoff = now - 24 * 60 * 60 * 1000;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const cutoff = startOfToday.getTime();
   const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
 
   store.ratings.forEach((entry) => {
@@ -594,44 +596,13 @@ function aggregateTickerItems(store) {
     }
   });
 
-  const normalItems = [1, 2, 3, 4]
-    .filter((score) => counts[score] > 0)
-    .map((score) => ({
-      categoryType: 'summary',
-      score,
-      count: counts[score],
-      isCritical: false,
-      createdAt: new Date(now).toISOString()
-    }));
-
-  const criticalItems = [5, 6]
-    .filter((score) => counts[score] > 0)
-    .map((score) => ({
-      categoryType: 'summary',
-      score,
-      count: counts[score],
-      isCritical: true,
-      createdAt: new Date(now).toISOString()
-    }));
-
-  if (!normalItems.length) {
-    return criticalItems;
-  }
-
-  const merged = [];
-  let normalIndex = 0;
-  let criticalIndex = 0;
-
-  while (normalIndex < normalItems.length || criticalIndex < criticalItems.length) {
-    if (normalIndex < normalItems.length) {
-      merged.push(normalItems[normalIndex++]);
-    }
-    if (criticalIndex < criticalItems.length) {
-      merged.push(criticalItems[criticalIndex++]);
-    }
-  }
-
-  return merged;
+  return [1, 2, 3, 4, 5, 6].map((score) => ({
+    categoryType: 'summary',
+    score,
+    count: counts[score],
+    isCritical: score >= 5,
+    createdAt: new Date(now).toISOString()
+  }));
 }
 
 function legendFilterData(store, score) {
