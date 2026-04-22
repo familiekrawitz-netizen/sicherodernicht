@@ -414,6 +414,7 @@ const mainDangerBtn = document.getElementById('mainDangerBtn');
 const funToggle = document.getElementById('funToggle');
 const viewSwitcher = document.getElementById('viewSwitcher');
 const submitStatus = document.getElementById('submitStatus');
+const debugStatus = document.getElementById('debugStatus');
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
@@ -633,6 +634,13 @@ function escapeHtml(value) {
 
 function showStatus(message) {
   submitStatus.textContent = message;
+}
+
+function debugLog(message) {
+  if (!debugStatus) return;
+  const stamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  debugStatus.textContent = `${stamp} · ${message}`;
+  debugStatus.classList.remove('hidden');
 }
 
 function iconHtml(content, className, size = [70, 70], anchor = [35, 35]) {
@@ -1736,22 +1744,28 @@ async function loadProfile() {
 }
 
 async function submitRating(score) {
+  debugLog(`Bewertung ${score} gedrückt`);
   if (!state.userPos) {
+    debugLog(`Bewertung ${score}: Standort fehlt, frage Standort an`);
     const position = await ensureUserPosition();
     if (!position) {
+      debugLog(`Bewertung ${score}: kein Standort erhalten`);
       showStatus(t('selectLocationFirst'));
       return;
     }
   }
   try {
+    debugLog(`Bewertung ${score}: sende an Server`);
     await api('/api/rate', {
       method: 'POST',
       body: JSON.stringify({ lat: state.userPos.lat, lng: state.userPos.lng, score })
     });
+    debugLog(`Bewertung ${score}: gespeichert`);
     showStatus(`${t('ratingSaved')} ${score}/5`);
     await Promise.all([loadMapData(), loadAreaSummary()]);
     await loadTicker();
   } catch (error) {
+    debugLog(`Bewertung ${score}: Fehler ${error && error.message ? error.message : 'unbekannt'}`);
     showStatus(error.retryAfterMinutes ? t('ratingBlocked') : t('ratingBlocked'));
   }
 }
@@ -1853,13 +1867,17 @@ function logoutOnAppClose() {
 }
 
 async function submitAlert(alertType) {
+  debugLog(`Gefahrenmeldung ${alertType} gedrückt`);
   if (!state.token || !state.userPos) {
     if (!state.token) {
+      debugLog('Gefahrenmeldung: kein Login vorhanden');
       showStatus(t('dangerRegistrationHint'));
       return;
     }
+    debugLog('Gefahrenmeldung: Standort fehlt, frage Standort an');
     const position = await ensureUserPosition();
     if (!position) {
+      debugLog('Gefahrenmeldung: kein Standort erhalten');
       showStatus(t('selectLocationFirst'));
       return;
     }
@@ -1876,6 +1894,7 @@ async function submitAlert(alertType) {
       note
     })
   });
+  debugLog(`Gefahrenmeldung ${alertType}: gesendet`);
   showStatus(`${t('alertSent')} ${t(`alertTypes.${alertType}`)}`);
   await Promise.all([loadMapData(), loadProfile(), loadTicker()]);
 }
@@ -2000,22 +2019,28 @@ function toggleFun() {
 }
 
 function locateMe() {
+  debugLog('Mein Standort gedrückt');
   if (!navigator.geolocation) {
+    debugLog('Standort: Geolocation nicht verfügbar');
     showStatus(t('locateError'));
     return;
   }
   if (!window.isSecureContext && location.hostname !== 'localhost') {
+    debugLog('Standort: kein sicherer Kontext');
     showStatus(t('secureContext'));
     return;
   }
 
+  debugLog('Standort: Browser-Abfrage startet');
   navigator.geolocation.getCurrentPosition(
     async (position) => {
+      debugLog(`Standort erhalten: ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`);
       setUserPosition(position.coords.latitude, position.coords.longitude);
       centerOnUser(position.coords.latitude, position.coords.longitude);
       await loadAreaSummary();
     },
     () => {
+      debugLog('Standort: abgelehnt oder nicht verfügbar');
       showStatus(t('locateError'));
     },
     { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
@@ -2047,6 +2072,7 @@ function autoLocateOnLoad() {
 }
 
 function activateButtonFromTouch(button) {
+  debugLog(`Touch erkannt: ${button.id || button.dataset.score || button.textContent.trim().slice(0, 24)}`);
   if (button.id === 'locateBtn') {
     locateMe();
     return;

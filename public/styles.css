@@ -960,6 +960,19 @@ button:disabled:active,
   color: #d9e7ff;
 }
 
+.debug-status {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #fef3c7;
+  border: 1px solid rgba(251, 191, 36, 0.38);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 .panel-head {
   justify-content: space-between;
   margin-bottom: 12px;
