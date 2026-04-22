@@ -15,7 +15,7 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="/styles.css?v=66" />
+    <link rel="stylesheet" href="/styles.css?v=67" />
   </head>
   <body class="design-friendly">
     <div class="shell">
@@ -102,7 +102,9 @@
             </div>
 
             <div class="toolbar compact">
-              <a class="outline-button security-link-button" href="/sicherheit.html" data-i18n="needSecurity">Ich brauche mehr Sicherheit! Links zu unseren Partnern und Hilfsangeboten!</a>
+              <a class="outline-button security-link-button" href="/sicherheit.html">
+                <span class="security-link-text" data-i18n="needSecurity">Ich brauche mehr Sicherheit! Für Informationen zu unseren Partnern und Hilfsangeboten hier klicken!</span>
+              </a>
             </div>
 
             <p id="submitStatus" class="status-line"></p>
@@ -176,7 +178,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=72"></script>
+    <script src="/app.js?v=73"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
