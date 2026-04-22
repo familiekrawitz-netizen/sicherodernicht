@@ -100,6 +100,8 @@ const texts = {
     viewWeek: 'Diese Woche',
     viewToday: 'Heute',
     locateError: 'Standort konnte nicht bestimmt werden.',
+    locationDeniedHint: 'iPhone liefert keinen Standort. Bitte Standort in iOS erlauben oder Karte auf den Ort schieben.',
+    mapCenterFallback: 'Standort nicht verfügbar. Die Kartenmitte wird als Bewertungsort verwendet.',
     secureContext: 'Geolocation braucht HTTPS oder localhost.',
     searching: 'Suche lauft...',
     noSearchResults: 'Ort nicht gefunden. Bitte suche genauer oder mit Stadtangabe.',
@@ -251,6 +253,8 @@ const texts = {
     viewWeek: 'This week',
     viewToday: 'Today',
     locateError: 'Could not determine location.',
+    locationDeniedHint: 'iPhone did not provide a location. Please allow location access or move the map to the place.',
+    mapCenterFallback: 'Location unavailable. The map center is used as the rating place.',
     secureContext: 'Geolocation requires HTTPS or localhost.',
     searching: 'Searching...',
     noSearchResults: 'Place not found. Please try a more specific search.',
@@ -920,7 +924,7 @@ function getCurrentPositionOnce() {
         resolve(state.userPos);
       },
       () => {
-        showStatus(t('locateError'));
+        showStatus(t('locationDeniedHint'));
         resolve(null);
       },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
@@ -935,8 +939,14 @@ async function ensureUserPosition() {
   if (position) {
     centerOnUser(position.lat, position.lng);
     await loadAreaSummary();
+    return position;
   }
-  return position;
+  const center = map.getCenter();
+  setUserPosition(center.lat, center.lng, false, false);
+  debugLog(`Standort-Fallback: Kartenmitte ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}`);
+  showStatus(t('mapCenterFallback'));
+  await loadAreaSummary();
+  return state.userPos;
 }
 
 async function showCompanyDangerView() {
@@ -1448,7 +1458,7 @@ async function api(path, options = {}) {
   return payload;
 }
 
-function setUserPosition(lat, lng, announce = true) {
+function setUserPosition(lat, lng, announce = true, shareLocation = true) {
   state.userPos = { lat, lng };
 
   if (!userMarker) {
@@ -1464,7 +1474,7 @@ function setUserPosition(lat, lng, announce = true) {
   }
   drawGuidance();
   const mayShareCompanyLocation = !state.user || state.user.role !== 'company' || state.shareCompanyLocation;
-  if (state.token && mayShareCompanyLocation) {
+  if (shareLocation && state.token && mayShareCompanyLocation) {
     api('/api/location', {
       method: 'POST',
       body: JSON.stringify({ token: state.token, lat, lng, share: true })
@@ -2041,7 +2051,7 @@ function locateMe() {
     },
     () => {
       debugLog('Standort: abgelehnt oder nicht verfügbar');
-      showStatus(t('locateError'));
+      showStatus(t('locationDeniedHint'));
     },
     { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
   );
