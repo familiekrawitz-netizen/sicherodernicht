@@ -600,6 +600,10 @@ a {
   flex-wrap: wrap;
 }
 
+.fun-buttons {
+  margin-top: 12px;
+}
+
 .rating-buttons button,
 .fun-buttons button,
 .company-alert-grid button {
