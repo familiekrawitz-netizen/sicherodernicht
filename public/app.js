@@ -402,7 +402,6 @@ const currentAlertsBtn = document.getElementById('currentAlertsBtn');
 const mainDangerBtn = document.getElementById('mainDangerBtn');
 const emergencyToggle = document.getElementById('emergencyToggle');
 const funToggle = document.getElementById('funToggle');
-const centerMapBtn = document.getElementById('centerMapBtn');
 const viewSwitcher = document.getElementById('viewSwitcher');
 const submitStatus = document.getElementById('submitStatus');
 const searchForm = document.getElementById('searchForm');
@@ -1886,13 +1885,6 @@ emergencyToggle.addEventListener('click', toggleEmergency);
 funToggle.addEventListener('click', toggleFun);
 searchForm.addEventListener('submit', searchPlaces);
 logoutButton.addEventListener('click', logout);
-centerMapBtn.addEventListener('click', () => {
-  if (state.userPos) {
-    map.flyTo([state.userPos.lat, state.userPos.lng], 16, { duration: 0.5 });
-  } else {
-    locateMe();
-  }
-});
 loginButton.addEventListener('click', () => {
   if (state.user) {
     const panelTop = authPanel.getBoundingClientRect().top + window.scrollY - 18;
