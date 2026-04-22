@@ -1134,13 +1134,24 @@ button:disabled:active,
 }
 
 .company-feed-list {
-  display: grid;
-  gap: 8px;
+  overflow: hidden;
+  border-radius: 18px;
 }
 
 .company-feed-row {
   display: grid;
   gap: 3px;
+  min-width: 250px;
+  flex: 0 0 auto;
+}
+
+.company-feed-marquee {
+  display: inline-flex;
+  gap: 12px;
+  min-width: 200%;
+  padding: 2px;
+  white-space: nowrap;
+  animation: companyFeedSlide 32s linear infinite;
 }
 
 body.design-friendly .company-overview-card,
@@ -2647,6 +2658,15 @@ body.design-friendly .partner-ad-copy strong::before {
 }
 
 @keyframes tickerSlide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes companyFeedSlide {
   0% {
     transform: translateX(0);
   }

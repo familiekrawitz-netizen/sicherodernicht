@@ -154,7 +154,7 @@ const texts = {
     responseChain: 'Rettungskette',
     responseChainText: 'Lage prüfen, Team warnen, bei akuter Gefahr 110 anrufen. Meldung kurz, sachlich und ohne unnötige Personendaten erfassen.',
     recentCompanyAlerts: 'Letzte Firmenmeldungen',
-    noCompanyAlerts: 'Noch keine Firmenmeldungen',
+    noCompanyAlerts: 'Keine wichtigen Firmenmeldungen der letzten 24 Stunden',
     privateTools: 'Privatkonto',
     memberLocations: 'Aktuelle Team-Standorte',
     shareMyLocation: 'Meinen Standort teilen',
@@ -305,7 +305,7 @@ const texts = {
     responseChain: 'Response chain',
     responseChainText: 'Check the situation, warn the team, call 110 in immediate danger. Keep reports short, factual and free of unnecessary personal data.',
     recentCompanyAlerts: 'Recent company reports',
-    noCompanyAlerts: 'No company reports yet',
+    noCompanyAlerts: 'No important company reports in the last 24 hours',
     privateTools: 'Private account',
     memberLocations: 'Current team locations',
     shareMyLocation: 'Share my location',
@@ -1195,24 +1195,29 @@ function renderAreaSummary() {
 
 function renderCompanyAlertList() {
   const alerts = [...state.companyAlerts]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 3);
+    .filter((alert) => new Date(alert.createdAt).getTime() >= Date.now() - 24 * 60 * 60 * 1000)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   if (!alerts.length) {
     return `<div class="member-row team-locations-empty">${t('noCompanyAlerts')}</div>`;
   }
 
-  return alerts
-    .map(
-      (alert) => `
-        <div class="company-feed-row">
-          <strong>${t(`alertTypes.${alert.alertType}`) || t('alertTypes.general')}</strong>
-          <span>${formatDate(alert.createdAt)}</span>
-          ${alert.note ? `<small>${escapeHtml(alert.note)}</small>` : ''}
-        </div>
-      `
-    )
-    .join('');
+  const tickerAlerts = [...alerts, ...alerts];
+  return `
+    <div class="company-feed-marquee">
+      ${tickerAlerts
+        .map(
+          (alert) => `
+            <div class="company-feed-row">
+              <strong>${escapeHtml(alert.reporter?.companyName || alert.companyLogo?.name || state.user?.companyName || '')}</strong>
+              <span>6 · ${t(`alertTypes.${alert.alertType}`) || t('alertTypes.general')} · ${formatDate(alert.createdAt)}</span>
+              ${alert.note ? `<small>${escapeHtml(alert.note)}</small>` : ''}
+            </div>
+          `
+        )
+        .join('')}
+    </div>
+  `;
 }
 
 function csvCell(value) {

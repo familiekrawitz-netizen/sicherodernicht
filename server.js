@@ -1429,7 +1429,10 @@ const server = http.createServer(async (req, res) => {
         location: entry.lastKnownLocation
       }));
 
-    const alerts = store.alerts.filter((entry) => entry.reporter.companyId === auth.user.companyId);
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const alerts = store.alerts
+      .filter((entry) => entry.reporter?.role === 'company' && new Date(entry.createdAt).getTime() >= cutoff)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     writeStore(store);
     sendJson(res, 200, { members, alerts });
     return;
