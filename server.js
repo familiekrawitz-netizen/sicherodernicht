@@ -19,6 +19,9 @@ const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
 const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
 const ADMIN_CODE = String(process.env.ADMIN_CODE || 'peter').trim().toLowerCase();
 const ADMIN_PIN = String(process.env.ADMIN_PIN || '97531pk').trim();
+const TEST_ACCESS_CODE = String(process.env.TEST_ACCESS_CODE || '').trim();
+const TEST_ACCESS_COOKIE = 'sicherodernicht_test_access';
+const TEST_ACCESS_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 
 const defaultStore = () => ({
   ratings: [],
@@ -308,6 +311,117 @@ function sendText(res, statusCode, text) {
     'Cache-Control': 'no-store'
   });
   res.end(text);
+}
+
+function parseCookies(req) {
+  return String(req.headers.cookie || '')
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reduce((cookies, part) => {
+      const index = part.indexOf('=');
+      if (index === -1) return cookies;
+      cookies[decodeURIComponent(part.slice(0, index))] = decodeURIComponent(part.slice(index + 1));
+      return cookies;
+    }, {});
+}
+
+function testAccessToken() {
+  return crypto.createHash('sha256').update(`${TEST_ACCESS_CODE}:${ANTI_SPAM_SALT}`).digest('hex');
+}
+
+function hasTestAccess(req) {
+  if (!TEST_ACCESS_CODE) return true;
+  return parseCookies(req)[TEST_ACCESS_COOKIE] === testAccessToken();
+}
+
+function testAccessCookie(req) {
+  const secure = req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
+  return `${TEST_ACCESS_COOKIE}=${encodeURIComponent(testAccessToken())}; Max-Age=${Math.floor(TEST_ACCESS_TTL_MS / 1000)}; Path=/; HttpOnly; SameSite=Lax${secure}`;
+}
+
+function wantsHtml(req, url) {
+  if (url.pathname === '/' || url.pathname.endsWith('.html')) return true;
+  return String(req.headers.accept || '').includes('text/html');
+}
+
+function sendTestAccessPage(res) {
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store'
+  });
+  res.end(`<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>sicherodernicht Testzugang</title>
+  <style>
+    :root { color-scheme: light; font-family: "Avenir Next", "Segoe UI", sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at 20% 10%, #d9f99d 0, transparent 28%), linear-gradient(135deg, #eff6ff, #fff7ed 58%, #ecfeff); color: #12201a; }
+    main { width: min(92vw, 440px); padding: 30px; border-radius: 30px; background: rgba(255,255,255,.82); box-shadow: 0 24px 80px rgba(15, 23, 42, .16); border: 1px solid rgba(255,255,255,.85); backdrop-filter: blur(18px); }
+    h1 { margin: 0 0 10px; font-size: clamp(2rem, 8vw, 3.2rem); letter-spacing: -.06em; }
+    p { margin: 0 0 22px; color: #475569; line-height: 1.5; }
+    label { display: grid; gap: 8px; font-weight: 800; color: #1f2937; }
+    input { min-height: 50px; border: 1px solid #cbd5e1; border-radius: 16px; padding: 0 16px; font-size: 1.05rem; background: #fff; }
+    button { width: 100%; min-height: 52px; margin-top: 14px; border: 0; border-radius: 17px; background: linear-gradient(135deg, #0f766e, #2563eb); color: white; font-weight: 900; font-size: 1rem; cursor: pointer; box-shadow: 0 14px 28px rgba(37,99,235,.2); }
+    button:active { transform: translateY(1px) scale(.99); }
+    .error { min-height: 22px; margin-top: 12px; color: #b91c1c; font-weight: 800; }
+    .hint { margin-top: 18px; font-size: .9rem; color: #64748b; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>sicherodernicht</h1>
+    <p>Diese Version ist noch in der Testphase. Bitte gib den Testcode ein, den du vom Betreiber erhalten hast.</p>
+    <form id="testAccessForm">
+      <label>Testcode
+        <input id="testCode" autocomplete="one-time-code" required autofocus />
+      </label>
+      <button type="submit">Testzugang öffnen</button>
+      <div id="error" class="error" role="status"></div>
+    </form>
+    <p class="hint">Nach erfolgreicher Eingabe bleibt der Zugang auf diesem Gerät einige Tage gespeichert.</p>
+  </main>
+  <script>
+    document.getElementById('testAccessForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const error = document.getElementById('error');
+      error.textContent = '';
+      const code = document.getElementById('testCode').value.trim();
+      const response = await fetch('/api/test-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      }).catch(() => null);
+      if (response && response.ok) {
+        window.location.reload();
+        return;
+      }
+      error.textContent = 'Der Testcode stimmt nicht.';
+    });
+  </script>
+</body>
+</html>`);
+}
+
+async function handleTestAccess(req, res) {
+  try {
+    const parsed = JSON.parse((await readBody(req)) || '{}');
+    const code = String(parsed.code || '').trim();
+    if (!TEST_ACCESS_CODE || code !== TEST_ACCESS_CODE) {
+      sendJson(res, 401, { error: 'Testcode stimmt nicht' });
+      return;
+    }
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'Set-Cookie': testAccessCookie(req)
+    });
+    res.end(JSON.stringify({ ok: true }));
+  } catch {
+    sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });
+  }
 }
 
 function readBody(req) {
@@ -1003,6 +1117,21 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://${req.headers.host}`);
+
+  if (url.pathname === '/api/test-access' && req.method === 'POST') {
+    await handleTestAccess(req, res);
+    return;
+  }
+
+  if (!hasTestAccess(req)) {
+    if (wantsHtml(req, url)) {
+      sendTestAccessPage(res);
+      return;
+    }
+    sendJson(res, 403, { error: 'Testzugang erforderlich' });
+    return;
+  }
+
   const store = readStore();
   pruneStore(store);
 
