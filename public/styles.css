@@ -1614,11 +1614,12 @@ body.company-mode .company-rating-grid .score-button {
   margin: 0;
 }
 
-.partner-placeholder-card {
+.partner-sponsor-card {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
   align-items: center;
+  overflow: hidden;
   color: var(--text);
   text-decoration: none;
   background:
@@ -1626,28 +1627,35 @@ body.company-mode .company-rating-grid .score-button {
     linear-gradient(135deg, rgba(20, 184, 166, 0.14), rgba(59, 130, 246, 0.12));
 }
 
-.partner-placeholder-card strong,
-.partner-placeholder-card small {
-  display: block;
-}
-
-.partner-placeholder-card small {
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.25;
-}
-
-.partner-placeholder-mark {
-  width: 42px;
-  height: 42px;
-  border-radius: 15px;
+.partner-sponsor-mark {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 184, 166, 0.14);
+  background: rgba(20, 184, 166, 0.16);
   color: #0f766e;
-  font-size: 1.35rem;
+  font-size: 0.76rem;
   font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.partner-sponsor-marquee {
+  display: inline-flex;
+  gap: 28px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #0f2a3f;
+  font-size: 0.94rem;
+  font-weight: 950;
+}
+
+.partner-sponsor-marquee span {
+  flex: 0 0 auto;
+  animation: sponsorMarquee 18s linear infinite;
 }
 
 body.design-friendly .ad-card {
@@ -1662,7 +1670,7 @@ body.design-friendly .partner-ad-card {
     radial-gradient(circle at 100% 0%, rgba(201, 0, 63, 0.16), transparent 42%);
 }
 
-body.design-friendly .partner-placeholder-card {
+body.design-friendly .partner-sponsor-card {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(236, 253, 245, 0.74)),
     radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.14), transparent 42%);
@@ -2601,6 +2609,15 @@ body.design-friendly .partner-ad-copy strong::before {
   }
   100% {
     background-position: 0% 50%;
+  }
+}
+
+@keyframes sponsorMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% - 28px));
   }
 }
 
