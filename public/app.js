@@ -59,7 +59,7 @@ const texts = {
   de: {
     defaultView: 'Standard: dieses Jahr',
     brandClaim: 'Sicher unterwegs. Schöne Orte teilen.',
-    heroTitle: 'Bin ich hier sicher? Wo ist es schön? Frag mich einfach?',
+    heroTitle: 'Bin ich hier sicher? Wo ist es schön? Frag mich einfach1',
     heroCopy: 'Teile mit anderen, wie Du dich an einem bestimmten Ort gefühlt hast und wo Du viel Spaß hattest. Die Karte zeigt Dir, wie andere Menschen die Umgebung bewerten, ohne bestimmte Geschäfte oder Personen herauszustellen.',
     locateMe: 'Mein Standort',
     locateActionHint: 'freigeben · zentrieren · anzeigen',
@@ -209,7 +209,7 @@ const texts = {
   en: {
     defaultView: 'Default: this year',
     brandClaim: 'Move safely. Share good places.',
-    heroTitle: 'Safe or not? Where does it feel good? Just ask me?',
+    heroTitle: 'Safe or not? Where does it feel good? Just ask me1',
     heroCopy: 'Share in seconds how a place feels right now. The map shows beautiful, neutral and unsafe areas without exposing individual shops or private people.',
     locateMe: 'My location',
     locateActionHint: 'allow · center · show',
