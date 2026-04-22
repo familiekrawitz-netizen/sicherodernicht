@@ -788,7 +788,6 @@ function renderCompanyDangerViewLayer() {
     });
     marker.bindPopup(`
       <strong>${t(`alertTypes.${entry.alertType}`) || t('alertTypes.general')}</strong><br>
-      ${escapeHtml(entry.reporter?.name || '')}<br>
       ${formatDate(entry.createdAt)}<br>
       ${formatDistance(entry.distance)} ${state.language === 'de' ? 'entfernt' : 'away'}<br>
       ${escapeHtml(entry.note || '')}
@@ -1574,17 +1573,13 @@ function renderMap() {
   });
 
   if (!state.companyDangerView) data.alerts.forEach((entry) => {
-    const companyLogo = entry.companyLogo
-      ? `<span class="company-logo-badge" style="background:${entry.companyLogo.color}">${entry.companyLogo.text}</span>`
-      : '';
     const marker = L.marker([entry.lat, entry.lng], {
-      icon: iconHtml(`<div class="alert-badge">6 ${companyLogo}</div>`, 'alert-marker', [70, 70], [35, 35])
+      icon: iconHtml('<div class="alert-badge">6</div>', 'alert-marker', [70, 70], [35, 35])
     });
     marker.bindPopup(`
       <strong>${t(`alertTypes.${entry.alertType}`) || t('alertTypes.general')}</strong><br>
-      ${entry.reporter.name}<br>
       ${formatDate(entry.createdAt)}<br>
-      ${entry.note || ''}
+      ${escapeHtml(entry.note || '')}
     `);
     marker.addTo(layers.alerts);
   });
@@ -1867,13 +1862,17 @@ async function pollAlerts() {
   await Promise.all([loadMapData(), state.token ? loadProfile() : Promise.resolve()]);
   const newestAlert = state.mapData?.alerts?.[state.mapData.alerts.length - 1];
   if (newestAlert && newestAlert.id !== latestAlertId) {
+    const matchingCompanyAlert = state.companyAlerts.find((entry) => entry.alertId === newestAlert.id);
     const shouldSound =
       latestAlertId &&
       state.user?.role === 'company' &&
-      newestAlert.reporter?.role === 'company' &&
-      newestAlert.reporter?.id !== state.user.id;
+      matchingCompanyAlert?.reporter?.role === 'company' &&
+      matchingCompanyAlert?.reporter?.id !== state.user.id;
     latestAlertId = newestAlert.id;
-    alertStrip.textContent = `${t('alertPoll')}: ${t(`alertTypes.${newestAlert.alertType}`) || t('alertTypes.general')} · ${newestAlert.reporter.name}`;
+    const sourceLabel = matchingCompanyAlert?.reporter?.companyName
+      ? ` · ${matchingCompanyAlert.reporter.companyName}`
+      : '';
+    alertStrip.textContent = `${t('alertPoll')}: ${t(`alertTypes.${newestAlert.alertType}`) || t('alertTypes.general')}${sourceLabel}`;
     alertStrip.classList.remove('hidden');
     if (shouldSound) {
       playCompanyAlertSound();

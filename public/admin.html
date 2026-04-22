@@ -50,6 +50,8 @@
           <div class="admin-actions admin-export-actions">
             <button id="exportAllCsvBtn" class="primary-button" type="button">Alles als CSV exportieren</button>
             <button id="exportAllJsonBtn" class="ghost-button" type="button">Alles als JSON anzeigen</button>
+            <button id="exportAuditCsvBtn" class="ghost-button" type="button">Audit-Daten CSV</button>
+            <button id="exportAuditJsonBtn" class="ghost-button" type="button">Audit-Daten JSON</button>
             <button id="loadSummaryBtn" class="ghost-button" type="button">Datenbankübersicht laden</button>
           </div>
           <pre id="adminSummary" class="admin-summary-box"></pre>
@@ -233,8 +235,8 @@
         showStatus('Datenbankübersicht geladen.');
       }
 
-      async function exportData(format) {
-        const response = await fetch(`/api/data/export?type=all&format=${format}`, {
+      async function exportData(format, type = 'all') {
+        const response = await fetch(`/api/data/export?type=${encodeURIComponent(type)}&format=${format}`, {
           headers: { Authorization: `Bearer ${state.token}` }
         });
         if (!response.ok) {
@@ -246,17 +248,18 @@
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `sicherodernicht-export-${new Date().toISOString().slice(0, 10)}.csv`;
+          const typeLabel = type === 'audit' ? 'audit' : 'lagebild';
+          link.download = `sicherodernicht-${typeLabel}-${new Date().toISOString().slice(0, 10)}.csv`;
           document.body.appendChild(link);
           link.click();
           link.remove();
           URL.revokeObjectURL(url);
-          showStatus('CSV-Export erstellt.');
+          showStatus(type === 'audit' ? 'Audit-CSV erstellt.' : 'CSV-Export erstellt.');
           return;
         }
         const payload = await response.json();
         adminSummary.textContent = JSON.stringify(payload, null, 2);
-        showStatus('JSON-Export geladen.');
+        showStatus(type === 'audit' ? 'Audit-JSON geladen.' : 'JSON-Export geladen.');
       }
 
       function resetCompanyForm() {
@@ -409,6 +412,8 @@
       document.getElementById('loadSummaryBtn').addEventListener('click', () => loadSummary().catch((error) => showStatus(error.message)));
       document.getElementById('exportAllCsvBtn').addEventListener('click', () => exportData('csv').catch((error) => showStatus(error.message)));
       document.getElementById('exportAllJsonBtn').addEventListener('click', () => exportData('json').catch((error) => showStatus(error.message)));
+      document.getElementById('exportAuditCsvBtn').addEventListener('click', () => exportData('csv', 'audit').catch((error) => showStatus(error.message)));
+      document.getElementById('exportAuditJsonBtn').addEventListener('click', () => exportData('json', 'audit').catch((error) => showStatus(error.message)));
       adminLoginForm.addEventListener('submit', (event) => loginAdmin(event).catch((error) => showStatus(error.message)));
 
       setAuthenticated(false);

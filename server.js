@@ -12,7 +12,9 @@ const COMPANY_ALERT_TYPES = ['gun', 'knife', 'violence', 'mob'];
 const FUN_TAGS = ['first_kiss', 'sport_success', 'best_recovery', 'kind_people', 'interesting_area'];
 const PUBLIC_SCORES = [1, 2, 3, 4, 5];
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
-const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 4;
+const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const PRIVATE_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+const COMPANY_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
 const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
 const ADMIN_CODE = String(process.env.ADMIN_CODE || 'peter').trim().toLowerCase();
@@ -21,6 +23,7 @@ const ADMIN_PIN = String(process.env.ADMIN_PIN || '97531pk').trim();
 const defaultStore = () => ({
   ratings: [],
   alerts: [],
+  alertAudits: [],
   funReports: [],
   sessions: [],
   adminSessions: [],
@@ -188,7 +191,7 @@ function readStore() {
   try {
     const raw = fs.readFileSync(STORE_FILE, 'utf8');
     const parsed = JSON.parse(raw);
-    return { ...defaultStore(), ...parsed };
+    return normalizeStore({ ...defaultStore(), ...parsed });
   } catch {
     return defaultStore();
   }
@@ -196,6 +199,85 @@ function readStore() {
 
 function writeStore(store) {
   fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), 'utf8');
+}
+
+function alertAuditTtlForRole(role) {
+  return role === 'company' ? COMPANY_ALERT_AUDIT_TTL_MS : PRIVATE_ALERT_AUDIT_TTL_MS;
+}
+
+function retentionUntilForAlert(createdAt, role) {
+  return new Date(new Date(createdAt).getTime() + alertAuditTtlForRole(role)).toISOString();
+}
+
+function anonymizedAlert(entry) {
+  return {
+    id: entry.id,
+    lat: entry.lat,
+    lng: entry.lng,
+    score: 6,
+    alertType: entry.alertType || 'general',
+    note: entry.note || '',
+    createdAt: entry.createdAt || new Date().toISOString(),
+    source: 'registered_alert_anonymized'
+  };
+}
+
+function buildAlertAudit({ alertId, createdAt, lat, lng, alertType, note, user, company }) {
+  return {
+    id: `audit-${alertId}`,
+    alertId,
+    createdAt,
+    retentionUntil: retentionUntilForAlert(createdAt, user.role),
+    lat,
+    lng,
+    alertType: alertType || 'general',
+    note: note || '',
+    reporter: {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      companyId: user.companyId,
+      companyName: user.companyName
+    },
+    companyLogo: company
+      ? {
+          text: company.logoText,
+          color: company.color,
+          name: company.name
+        }
+      : null
+  };
+}
+
+function auditFromAlert(entry) {
+  if (!entry.reporter) return null;
+  return {
+    id: `audit-${entry.id}`,
+    alertId: entry.id,
+    createdAt: entry.createdAt || new Date().toISOString(),
+    retentionUntil: retentionUntilForAlert(entry.createdAt || new Date().toISOString(), entry.reporter.role),
+    lat: entry.lat,
+    lng: entry.lng,
+    alertType: entry.alertType || 'general',
+    note: entry.note || '',
+    reporter: entry.reporter,
+    companyLogo: entry.companyLogo || null
+  };
+}
+
+function normalizeStore(store) {
+  store.alertAudits = Array.isArray(store.alertAudits) ? store.alertAudits : [];
+  const migratedAudits = [];
+  store.alerts = (store.alerts || []).map((entry) => {
+    const audit = auditFromAlert(entry);
+    if (audit && !store.alertAudits.some((existing) => existing.alertId === audit.alertId)) {
+      migratedAudits.push(audit);
+    }
+    return anonymizedAlert(entry);
+  });
+  store.alertAudits = [...store.alertAudits, ...migratedAudits];
+  pruneStore(store);
+  return store;
 }
 
 function sendJson(res, statusCode, payload) {
@@ -314,6 +396,10 @@ function pruneStore(store) {
   store.sessions = store.sessions.filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.adminSessions = (store.adminSessions || []).filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.cooldowns = store.cooldowns.filter((entry) => now - new Date(entry.createdAt).getTime() <= PUBLIC_RATING_COOLDOWN_MS);
+  store.alertAudits = (store.alertAudits || []).filter((entry) => {
+    const retentionUntil = entry.retentionUntil ? new Date(entry.retentionUntil).getTime() : 0;
+    return retentionUntil && retentionUntil >= now;
+  });
   store.users = store.users.map((user) => {
     const lastSeen = user.lastKnownLocation ? new Date(user.lastKnownLocation.updatedAt).getTime() : 0;
     if (lastSeen && now - lastSeen > COMPANY_LOCATION_TTL_MS) {
@@ -696,7 +782,9 @@ function exportRecords(store, type = 'all') {
     companyName: '',
     alertType: '',
     funTag: '',
-    note: ''
+    note: '',
+    alertId: '',
+    retentionUntil: ''
   }));
 
   const funReports = store.funReports.map((entry) => ({
@@ -717,11 +805,13 @@ function exportRecords(store, type = 'all') {
     companyName: '',
     alertType: '',
     funTag: entry.tag,
-    note: ''
+    note: '',
+    alertId: '',
+    retentionUntil: ''
   }));
 
   const registeredAlerts = store.alerts.map((entry) => ({
-    dataset: 'registered_alert',
+    dataset: 'registered_alert_anonymized',
     id: entry.id,
     createdAt: entry.createdAt,
     cellId: cellIdFor(entry.lat, entry.lng),
@@ -729,7 +819,30 @@ function exportRecords(store, type = 'all') {
     lng: entry.lng,
     score: 6,
     category: exportAlertLabel(entry.alertType),
-    source: 'registered',
+    source: entry.source || 'registered_alert_anonymized',
+    anonymous: true,
+    reporterId: '',
+    reporterName: '',
+    reporterRole: '',
+    companyId: '',
+    companyName: '',
+    alertType: entry.alertType || 'general',
+    funTag: '',
+    note: entry.note || '',
+    alertId: '',
+    retentionUntil: ''
+  }));
+
+  const alertAudits = (store.alertAudits || []).map((entry) => ({
+    dataset: 'registered_alert_audit',
+    id: entry.id,
+    createdAt: entry.createdAt,
+    cellId: cellIdFor(entry.lat, entry.lng),
+    lat: entry.lat,
+    lng: entry.lng,
+    score: 6,
+    category: exportAlertLabel(entry.alertType),
+    source: 'registered_audit',
     anonymous: false,
     reporterId: entry.reporter?.id || '',
     reporterName: entry.reporter?.name || '',
@@ -738,7 +851,9 @@ function exportRecords(store, type = 'all') {
     companyName: entry.reporter?.companyName || '',
     alertType: entry.alertType || 'general',
     funTag: '',
-    note: entry.note || ''
+    note: entry.note || '',
+    alertId: entry.alertId || '',
+    retentionUntil: entry.retentionUntil || ''
   }));
 
   const recordsByType = {
@@ -747,7 +862,9 @@ function exportRecords(store, type = 'all') {
     ratings: publicRatings,
     fun: funReports,
     registered: registeredAlerts,
-    alerts: registeredAlerts
+    alerts: registeredAlerts,
+    audit: alertAudits,
+    alertAudits
   };
 
   return recordsByType[type] || recordsByType.all;
@@ -780,7 +897,9 @@ function recordsToCsv(records) {
     'companyName',
     'alertType',
     'funTag',
-    'note'
+    'note',
+    'alertId',
+    'retentionUntil'
   ];
   const rows = records.map((record) => headers.map((header) => csvEscape(record[header])).join(';'));
   return [headers.join(';'), ...rows].join('\n');
@@ -849,7 +968,8 @@ function analyticsSummary(store) {
     totals: {
       anonymousRatings: store.ratings.length,
       anonymousFunReports: store.funReports.length,
-      registeredAlerts: store.alerts.length
+      registeredAlerts: store.alerts.length,
+      temporaryAlertAudits: (store.alertAudits || []).length
     },
     beautifulAreas: cells
       .filter((cell) => cell.averageScore <= 2)
@@ -1377,29 +1497,32 @@ const server = http.createServer(async (req, res) => {
         ? store.companies.find((entry) => entry.id === auth.user.companyId) || null
         : null;
 
-      store.alerts.push({
-        id: `alert-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
+      const alertId = `alert-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+      const createdAt = new Date().toISOString();
+      const anonymized = {
+        id: alertId,
         lat: snapped.lat,
         lng: snapped.lng,
         score: 6,
         alertType,
         note,
-        createdAt: new Date().toISOString(),
-        reporter: {
-          id: auth.user.id,
-          name: auth.user.name,
-          role: auth.user.role,
-          companyId: auth.user.companyId,
-          companyName: auth.user.companyName
-        },
-        companyLogo: company
-          ? {
-              text: company.logoText,
-              color: company.color,
-              name: company.name
-            }
-          : null
+        createdAt,
+        source: 'registered_alert_anonymized'
+      };
+      const audit = buildAlertAudit({
+        alertId,
+        createdAt,
+        lat: snapped.lat,
+        lng: snapped.lng,
+        alertType,
+        note,
+        user: auth.user,
+        company
       });
+
+      store.alerts.push(anonymized);
+      store.alertAudits = store.alertAudits || [];
+      store.alertAudits.push(audit);
 
       writeStore(store);
       sendJson(res, 201, { ok: true });
@@ -1430,7 +1553,7 @@ const server = http.createServer(async (req, res) => {
       }));
 
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    const alerts = store.alerts
+    const alerts = (store.alertAudits || [])
       .filter((entry) => entry.reporter?.role === 'company' && new Date(entry.createdAt).getTime() >= cutoff)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     writeStore(store);
