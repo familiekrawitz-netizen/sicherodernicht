@@ -75,7 +75,8 @@ const texts = {
     quickRate: 'Schnell bewerten',
     radiusHint: 'Automatisch auf 100 m gerundet',
     funMode: 'Spaß gehabt?',
-    funModeHint: 'Schönen Moment markieren',
+    funModeHint: 'Fun-Bewertungen öffnen',
+    funModeHintOpen: 'Fun-Bewertungen schließen',
     ratingInvite: 'Wie ist es hier? Teile es mit Anderen',
     emergency: 'Notfall',
     emergencyInfo: 'Nur für registrierte Firmennutzer',
@@ -224,7 +225,8 @@ const texts = {
     quickRate: 'Quick rate',
     radiusHint: 'Automatically rounded to 100 m',
     funMode: 'Had fun?',
-    funModeHint: 'Mark a nice moment',
+    funModeHint: 'Open fun ratings',
+    funModeHintOpen: 'Close fun ratings',
     ratingInvite: 'How is it here? Share it with others',
     emergency: 'Emergency',
     emergencyInfo: 'Company accounts only',
@@ -671,13 +673,27 @@ function updateTranslations() {
   renderLegend();
   renderRatingButtons();
   renderFunButtons();
-  funToggle.classList.toggle('is-active', state.funMode);
+  updateFunToggleState();
   updateDangerButtonState();
   renderLoginPopover();
   renderAuthPanel();
   renderReportTicker();
   renderCompanyTicker();
   renderAreaSummary();
+}
+
+function updateFunToggleState() {
+  funToggle.classList.toggle('is-active', state.funMode);
+  funToggle.setAttribute('aria-expanded', state.funMode ? 'true' : 'false');
+
+  const hint = funToggle.querySelector('.fun-invite-sub');
+  const arrow = funToggle.querySelector('.fun-invite-arrow');
+  if (hint) {
+    hint.textContent = state.funMode ? t('funModeHintOpen') : t('funModeHint');
+  }
+  if (arrow) {
+    arrow.textContent = state.funMode ? '⌃' : '⌄';
+  }
 }
 
 function updateDangerButtonState() {
@@ -1774,7 +1790,7 @@ function toggleFun() {
     state.pendingFunPos = null;
   }
   funButtons.classList.toggle('hidden', !state.funMode);
-  funToggle.classList.toggle('is-active', state.funMode);
+  updateFunToggleState();
   renderMap();
 }
 
