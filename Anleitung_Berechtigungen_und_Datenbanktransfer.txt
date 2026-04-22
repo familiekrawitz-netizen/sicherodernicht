@@ -1,0 +1,273 @@
+Anleitung: Firmenrechte vergeben und Datenbank sichern
+Projekt: sicherodernicht
+Stand: 22.04.2026
+
+Wichtig vorab
+==============
+
+Die lokale Testversion der App speichert Daten auf deinem Mac in:
+
+/Users/peterkrawitz/Documents/Web-App/data/store.json
+
+Wenn die App auf Render laeuft, hat Render eine eigene Datenbankdatei bzw. spaeter eine eigene echte Datenbank. Die Daten auf deinem Mac und die Daten bei Render sind dann nicht automatisch identisch.
+
+
+1. Adminseite oeffnen
+=====================
+
+Die Verwaltung der Firmen, Nutzer und Login-Rechte erfolgt ueber die Adminseite:
+
+http://localhost:3000/admin.html
+
+Aktueller lokaler Admin-Login:
+
+Admin-Code: peter
+Admin-PIN: 97531pk
+
+Hinweis:
+Fuer den echten Onlinebetrieb sollten diese Admin-Daten spaeter unbedingt geaendert und sicher bei Render als Environment Variables hinterlegt werden.
+
+
+2. Beispiel-Firma: safeguard1
+=============================
+
+In der App gibt es bereits einen Firmenzugang mit dem Beispielnamen:
+
+safeguard1
+
+Dieser Zugang steht fuer eine Firma bzw. ein Unternehmen. Mitarbeiter dieser Firma koennen als Firmennutzer angelegt und dieser Firma zugeordnet werden.
+
+Firmennutzer haben mehr Rechte als private Nutzer. Sie koennen zum Beispiel:
+
+- die Meldung "6 Aktuelle Gefahr" abgeben
+- die Firmen-Werkzeuge bzw. den Einsatzmodus nutzen
+- Teamstandorte anzeigen, sofern Mitarbeiter ihren Standort teilen
+- besondere Gefahrenmeldungen wie Schusswaffe, Messer, Gewalt oder Mob melden
+- aktuelle Gefahren der letzten 24 Stunden im Firmenmodus sehen
+
+
+3. Zehn Mitarbeiter fuer safeguard1 anlegen
+===========================================
+
+Gehe auf der Adminseite in den Bereich fuer Nutzerverwaltung.
+
+Fuer jeden Mitarbeiter legst du einen eigenen Nutzer an. Wichtig ist, dass jeder Mitarbeiter eigene Login-Daten bekommt. So kann spaeter nachvollzogen werden, wer eine sicherheitsrelevante Meldung abgegeben hat.
+
+Empfohlenes Muster fuer 10 Mitarbeiter:
+
+Mitarbeiter 1
+Name: Safeguard Mitarbeiter 01
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg01
+PIN: 10001sg
+
+Mitarbeiter 2
+Name: Safeguard Mitarbeiter 02
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg02
+PIN: 10002sg
+
+Mitarbeiter 3
+Name: Safeguard Mitarbeiter 03
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg03
+PIN: 10003sg
+
+Mitarbeiter 4
+Name: Safeguard Mitarbeiter 04
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg04
+PIN: 10004sg
+
+Mitarbeiter 5
+Name: Safeguard Mitarbeiter 05
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg05
+PIN: 10005sg
+
+Mitarbeiter 6
+Name: Safeguard Mitarbeiter 06
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg06
+PIN: 10006sg
+
+Mitarbeiter 7
+Name: Safeguard Mitarbeiter 07
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg07
+PIN: 10007sg
+
+Mitarbeiter 8
+Name: Safeguard Mitarbeiter 08
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg08
+PIN: 10008sg
+
+Mitarbeiter 9
+Name: Safeguard Mitarbeiter 09
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg09
+PIN: 10009sg
+
+Mitarbeiter 10
+Name: Safeguard Mitarbeiter 10
+Rolle: Firmennutzer
+Firma: safeguard1
+Login-Code: sg10
+PIN: 10010sg
+
+Die PIN-Regel in der App lautet:
+5 Zahlen und 2 Buchstaben.
+
+Beispiele:
+10001sg
+24680sg
+86420sg
+
+
+4. Berechtigungen wieder entziehen
+==================================
+
+Wenn ein Mitarbeiter keinen Zugang mehr haben soll, gibt es zwei einfache Wege:
+
+1. Nutzer auf der Adminseite loeschen.
+Das ist die klarste Loesung, wenn der Zugang dauerhaft entzogen werden soll.
+
+2. PIN oder Login-Code aendern.
+Das ist sinnvoll, wenn der Nutzer spaeter vielleicht wieder Zugriff erhalten soll.
+
+Wichtig:
+Wenn ein Mitarbeiter ausscheidet, sollte sein Login sofort geloescht oder geaendert werden.
+
+
+5. Welche Daten werden gespeichert?
+===================================
+
+Oeffentliche Bewertungen 1 bis 5:
+Diese werden anonym gespeichert. Sie dienen dem langfristigen Lagebild.
+
+Fun-Meldungen:
+Diese werden ebenfalls anonym gespeichert.
+
+Meldung "6 Aktuelle Gefahr":
+Die eigentliche Meldung wird anonym im Lagebild gespeichert.
+Zusaetzlich gibt es fuer registrierte Nutzer eine getrennte Audit-Speicherung, damit Missbrauch geprueft werden kann.
+
+Firmennutzer:
+Bei Firmennutzern werden sicherheitsrelevante Meldungen nachvollziehbar gespeichert, zum Beispiel wer, wann, wo und was gemeldet hat. Diese Audit-Daten sind nur fuer Adminzwecke gedacht.
+
+
+6. Datenbank lokal auf dem Mac sichern
+======================================
+
+Die lokale Datenbankdatei liegt hier:
+
+/Users/peterkrawitz/Documents/Web-App/data/store.json
+
+Zum Sichern kannst du im Finder diesen Ordner oeffnen:
+
+/Users/peterkrawitz/Documents/Web-App/data
+
+Dann kopierst du die Datei:
+
+store.json
+
+an einen sicheren Ort, zum Beispiel auf einen USB-Stick oder in einen Sicherungsordner.
+
+Wichtig:
+Diese Datei kann sensible Daten enthalten, insbesondere Admin-, Nutzer- oder Audit-Daten. Sie sollte nicht unverschluesselt an Unbefugte weitergegeben werden.
+
+
+7. Datenbank von Render auf den Laptop uebertragen
+==================================================
+
+Das genaue Vorgehen haengt davon ab, wie die App bei Render betrieben wird.
+
+Fall A: Render nutzt noch die einfache Datei data/store.json
+-----------------------------------------------------------
+
+Dann muss die Datei von Render heruntergeladen werden.
+
+Je nach Render-Plan und Einrichtung geht das zum Beispiel ueber:
+
+- Render Shell
+- ein Admin-Export in der App
+- spaeter ueber eine geschuetzte Exportfunktion
+
+Der aktuell einfachste Weg in unserer App ist:
+
+1. Adminseite der Online-App oeffnen.
+2. Als Admin einloggen.
+3. Im Bereich "Datenbank & Export" den Export nutzen.
+4. Fuer das langfristige Lagebild: "Alles als CSV exportieren" oder JSON.
+5. Fuer nachvollziehbare Admin-/Auditdaten: "Audit-Daten CSV" oder JSON.
+6. Die heruntergeladene Datei auf dem Laptop speichern.
+
+Der normale Lagebild-Export enthaelt keine Meldernamen.
+Der Audit-Export enthaelt nachvollziehbare Daten und muss besonders geschuetzt werden.
+
+
+Fall B: Render nutzt spaeter eine echte Datenbank
+-------------------------------------------------
+
+Fuer den echten Betrieb ist eine richtige Datenbank besser, zum Beispiel:
+
+- PostgreSQL bei Render
+- Supabase
+- Neon
+
+Dann erfolgt der Transfer nicht mehr ueber die Datei store.json, sondern ueber einen Datenbankexport.
+
+Typische Moeglichkeiten:
+
+- Export als CSV ueber die Adminseite
+- Export als JSON ueber die Adminseite
+- Datenbank-Dump direkt beim Anbieter
+
+Fuer dich als Betreiber waere die einfachste Variante:
+Die App bekommt eine Adminseite, auf der du per Button die gewuenschten Daten herunterladen kannst.
+
+
+8. Empfehlung fuer den Echtbetrieb
+==================================
+
+Fuer Tests ist data/store.json in Ordnung.
+
+Fuer den echten oeffentlichen Betrieb sollte spaeter Folgendes umgesetzt werden:
+
+- echte Datenbank statt einfacher JSON-Datei
+- regelmaessige automatische Backups
+- Adminzugang nicht im Code speichern
+- Audit-Daten getrennt halten
+- Audit-Daten zeitlich begrenzen
+- Lagebilddaten dauerhaft, aber anonym speichern
+- Export nur fuer Admins erlauben
+- Datenschutztext an den echten Betrieb anpassen
+
+
+9. Kurze Zusammenfassung
+========================
+
+Mitarbeiterrechte vergibst du ueber:
+
+http://localhost:3000/admin.html
+
+Die lokale Datenbank liegt hier:
+
+/Users/peterkrawitz/Documents/Web-App/data/store.json
+
+Fuer 10 safeguard1-Mitarbeiter legst du 10 einzelne Firmennutzer an.
+
+Rechte entziehst du, indem du den Nutzer loeschst oder Login-Code/PIN aenderst.
+
+Render-Daten uebertraegst du am einfachsten ueber den Admin-Export der Online-App.
+
