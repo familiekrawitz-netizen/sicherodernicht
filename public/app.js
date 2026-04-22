@@ -60,7 +60,7 @@ const texts = {
     defaultView: 'Standard: dieses Jahr',
     brandClaim: 'Sicher unterwegs. Schöne Orte teilen.',
     heroTitle: 'Bin ich hier sicher? Wo ist es schön?',
-    heroCopy: 'Teile in Sekunden, wie sich ein Ort gerade anfühlt. Die Karte zeigt schöne, neutrale und unsichere Bereiche ohne einzelne Geschäfte oder Privatpersonen herauszustellen.',
+    heroCopy: 'Teile mit anderen, wie Du dich an einem bestimmten Ort gefühlt hast und wo Du viel Spaß hattest. Die Karte zeigt Dir, wie andere Menschen die Umgebung bewerten, ohne bestimmte Geschäfte oder Personen herauszustellen.',
     locateMe: 'Mein Standort',
     todayMode: 'Heute',
     thisWeek: 'Diese Woche',
