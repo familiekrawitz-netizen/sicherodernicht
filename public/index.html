@@ -15,7 +15,7 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="/styles.css?v=60" />
+    <link rel="stylesheet" href="/styles.css?v=62" />
   </head>
   <body class="design-friendly">
     <div class="shell">
@@ -43,7 +43,13 @@
               Teile mit anderen, wie Du dich an einem bestimmten Ort gefühlt hast und wo Du viel Spaß hattest. Die Karte zeigt Dir, wie andere Menschen die Umgebung bewerten, ohne bestimmte Geschäfte oder Personen herauszustellen.
             </p>
             <div class="toolbar">
-              <button id="locateBtn" class="primary-button" type="button" data-i18n="locateMe">Mein Standort</button>
+              <button id="locateBtn" class="primary-button location-action" type="button" aria-label="Mein Standort freigeben, zentrieren und anzeigen">
+                <span class="location-action-icon" aria-hidden="true">📍</span>
+                <span class="location-action-copy">
+                  <span class="location-action-title" data-i18n="locateMe">Mein Standort</span>
+                  <span class="location-action-sub" data-i18n="locateActionHint">freigeben · zentrieren · anzeigen</span>
+                </span>
+              </button>
               <button id="currentAlertsBtn" class="current-alerts-button hidden" type="button">0 aktuelle Meldungen</button>
             </div>
 
@@ -176,7 +182,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=65"></script>
+    <script src="/app.js?v=66"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
