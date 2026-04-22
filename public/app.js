@@ -389,6 +389,14 @@ const layers = {
   arrows: L.layerGroup().addTo(map)
 };
 
+function refreshMapSize() {
+  [0, 120, 360, 800].forEach((delay) => {
+    window.setTimeout(() => {
+      map.invalidateSize();
+    }, delay);
+  });
+}
+
 let userMarker = null;
 let watchId = null;
 let latestAlertId = '';
@@ -1433,7 +1441,7 @@ function setUserPosition(lat, lng, announce = true) {
 function centerOnUser(lat, lng) {
   state.followUser = true;
   map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate: true });
-  map.invalidateSize();
+  refreshMapSize();
   mapPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -2021,8 +2029,10 @@ map.on('moveend', () => {
 });
 
 window.addEventListener('resize', () => {
-  map.invalidateSize();
+  refreshMapSize();
 });
+
+window.addEventListener('orientationchange', refreshMapSize);
 
 window.addEventListener('pagehide', logoutOnAppClose);
 
@@ -2057,6 +2067,7 @@ loginButton.addEventListener('click', () => {
 });
 
 async function bootstrap() {
+  refreshMapSize();
   showConsentBanner();
   const bootstrapData = await api('/api/bootstrap');
   state.mapData = { companies: bootstrapData.companies, emergencyPlaces: bootstrapData.emergencyPlaces, cells: [], alerts: [], funReports: [] };
@@ -2067,6 +2078,7 @@ async function bootstrap() {
   startPolling();
   renderAreaSummary();
   autoLocateOnLoad();
+  refreshMapSize();
 }
 
 bootstrap().catch((error) => {
