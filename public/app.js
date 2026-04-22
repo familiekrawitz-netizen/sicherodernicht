@@ -3,13 +3,14 @@ const CONSENT_KEY = 'sicherodernicht-consent-v1';
 function storedConsent() {
   try {
     return JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null');
-  } catch {
+  } catch (error) {
     return null;
   }
 }
 
 function hasComfortConsent() {
-  return storedConsent()?.comfort === true;
+  const consent = storedConsent();
+  return consent && consent.comfort === true;
 }
 
 function cleanupComfortStorage() {
@@ -435,6 +436,24 @@ const cookieSettingsBtn = document.getElementById('cookieSettingsBtn');
 
 const viewOptions = ['today', 'week', 'month', 'year'];
 
+function closestButton(element) {
+  let current = element;
+  while (current && current !== document.body) {
+    if (current.tagName && current.tagName.toLowerCase() === 'button') return current;
+    current = current.parentNode;
+  }
+  return null;
+}
+
+function installTouchButtonFallback() {
+  document.addEventListener('touchend', (event) => {
+    const button = closestButton(event.target);
+    if (!button || button.disabled) return;
+    event.preventDefault();
+    button.click();
+  }, { passive: false });
+}
+
 function t(key) {
   const lang = texts[state.language];
   return key.split('.').reduce((value, part) => value && value[part], lang) || key;
@@ -443,7 +462,7 @@ function t(key) {
 function showConsentBanner(force = false) {
   const consent = storedConsent();
   if (!force && consent) return;
-  comfortConsentInput.checked = consent?.comfort === true;
+  comfortConsentInput.checked = consent && consent.comfort === true;
   consentBanner.classList.remove('hidden');
 }
 
@@ -468,7 +487,7 @@ function saveConsent(comfort) {
 }
 
 function applyUserMode() {
-  const isCompany = state.user?.role === 'company';
+  const isCompany = state.user && state.user.role === 'company';
   document.body.classList.toggle('company-mode', isCompany);
   if (!isCompany) {
     state.companyDangerView = false;
@@ -501,7 +520,8 @@ function circleOpacityForZoom() {
 function updateCircleOpacity() {
   const { cloudAlpha, cloudSize } = ratingCloudMetricsForZoom();
   state.cellCircles.forEach((cloud) => {
-    const element = cloud.getElement?.()?.querySelector('.rating-cloud-visual');
+    const markerElement = typeof cloud.getElement === 'function' ? cloud.getElement() : null;
+    const element = markerElement ? markerElement.querySelector('.rating-cloud-visual') : null;
     if (!element) return;
     element.style.setProperty('--cloud-alpha', cloudAlpha);
     element.style.setProperty('--cloud-size', `${cloudSize}px`);
@@ -602,12 +622,12 @@ function formatDistance(meters) {
 }
 
 function escapeHtml(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function showStatus(message) {
@@ -720,7 +740,7 @@ async function toggleCompanyLocationSharing() {
 
 function currentDangerAlerts() {
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  return (state.mapData?.alerts || [])
+  return ((state.mapData && state.mapData.alerts) || [])
     .filter((entry) => new Date(entry.createdAt).getTime() >= cutoff)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
@@ -769,7 +789,7 @@ function edgeLatLngToward(center, target) {
 
 function renderCompanyDangerViewLayer() {
   layers.dangerView.clearLayers();
-  if (!state.companyDangerView || state.user?.role !== 'company' || !state.userPos) return;
+  if (!state.companyDangerView || !state.user || state.user.role !== 'company' || !state.userPos) return;
 
   const alerts = currentDangerAlertsWithDistance(state.userPos);
   const inRadius = alerts.filter((entry) => entry.distance <= COMPANY_DANGER_RADIUS_METERS);
@@ -824,7 +844,7 @@ function renderCompanyDangerViewLayer() {
 }
 
 function updateCurrentAlertsButton() {
-  const isCompany = state.user?.role === 'company';
+  const isCompany = state.user && state.user.role === 'company';
   const alerts = currentDangerAlerts();
   currentAlertsBtn.classList.toggle('hidden', !isCompany || !alerts.length);
   if (!isCompany || !alerts.length) return;
@@ -835,7 +855,7 @@ function updateCurrentAlertsButton() {
 }
 
 function playCompanyAlertSound() {
-  if (state.user?.role !== 'company') return;
+  if (!state.user || state.user.role !== 'company') return;
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   if (!AudioContext) return;
 
@@ -870,7 +890,7 @@ function focusNextCurrentAlert() {
   const alert = alerts[state.currentAlertIndex];
   map.flyTo([alert.lat, alert.lng], Math.max(map.getZoom(), 16), { duration: 0.65 });
   showStatus(`${t('alertPoll')}: ${t(`alertTypes.${alert.alertType}`) || t('alertTypes.general')}`);
-  mapPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (mapPanel) mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function getCurrentPositionOnce() {
@@ -900,7 +920,7 @@ function getCurrentPositionOnce() {
 }
 
 async function showCompanyDangerView() {
-  if (state.user?.role !== 'company') {
+  if (!state.user || state.user.role !== 'company') {
     showStatus(t('companyOnlyEmergency'));
     return;
   }
@@ -918,7 +938,7 @@ async function showCompanyDangerView() {
   map.fitBounds(companyDangerBounds(center), { padding: [30, 30], animate: true });
   renderMap();
   window.setTimeout(renderCompanyDangerViewLayer, 320);
-  mapPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (mapPanel) mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   showStatus(`${inRadius.length} ${t('companyDangerRadiusShown')}`);
 }
 
@@ -1016,7 +1036,7 @@ function renderViewSwitcher() {
 function renderLegend() {
   legendList.innerHTML = '';
   [...scoreDefinitions, 6].forEach((score) => {
-    const remaining = state.legendFilter?.score === score ? state.legendFilter.remaining : 0;
+    const remaining = state.legendFilter && state.legendFilter.score === score ? state.legendFilter.remaining : 0;
     const item = document.createElement('div');
     item.className = `legend-item ${remaining ? 'is-filtering' : ''}`;
     item.innerHTML = `
@@ -1050,7 +1070,7 @@ function renderRatingButtons() {
 }
 
 function stopLegendFilter(announce = false) {
-  if (state.legendFilter?.timerId) {
+  if (state.legendFilter && state.legendFilter.timerId) {
     clearInterval(state.legendFilter.timerId);
   }
   state.legendFilter = null;
@@ -1068,7 +1088,7 @@ async function startLegendFilter(score) {
   state.companyDangerView = false;
   layers.dangerView.clearLayers();
 
-  if (state.legendFilter?.timerId) {
+  if (state.legendFilter && state.legendFilter.timerId) {
     clearInterval(state.legendFilter.timerId);
   }
 
@@ -1111,7 +1131,7 @@ function renderFunButtons() {
 }
 
 function renderCompanyTicker() {
-  const companies = state.mapData?.companies || [];
+  const companies = (state.mapData && state.mapData.companies) || [];
   const repeated = [...companies, ...companies];
   companyTicker.innerHTML = `
     <div class="company-ticker-track">
@@ -1179,8 +1199,8 @@ function renderAreaSummary() {
     return;
   }
 
-  const yearScore = state.areaData.year.averageScore ?? t('noData');
-  const todayScore = state.areaData.today.averageScore ?? t('noData');
+  const yearScore = state.areaData.year.averageScore == null ? t('noData') : state.areaData.year.averageScore;
+  const todayScore = state.areaData.today.averageScore == null ? t('noData') : state.areaData.today.averageScore;
   const excellent = state.areaData.nearestExcellent
     ? `${Math.round(distanceMeters(state.userPos.lat, state.userPos.lng, state.areaData.nearestExcellent.lat, state.areaData.nearestExcellent.lng))} m`
     : t('noData');
@@ -1216,7 +1236,7 @@ function renderCompanyAlertList() {
         .map(
           (alert) => `
             <div class="company-feed-row">
-              <strong>${escapeHtml(alert.reporter?.companyName || alert.companyLogo?.name || state.user?.companyName || '')}</strong>
+              <strong>${escapeHtml((alert.reporter && alert.reporter.companyName) || (alert.companyLogo && alert.companyLogo.name) || (state.user && state.user.companyName) || '')}</strong>
               <span>6 · ${t(`alertTypes.${alert.alertType}`) || t('alertTypes.general')} · ${formatDate(alert.createdAt)}</span>
               ${alert.note ? `<small>${escapeHtml(alert.note)}</small>` : ''}
             </div>
@@ -1228,8 +1248,8 @@ function renderCompanyAlertList() {
 }
 
 function csvCell(value) {
-  const text = String(value ?? '');
-  return /[",\n\r;]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  const text = String(value == null ? '' : value);
+  return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 function downloadCompanyCsv() {
@@ -1238,8 +1258,8 @@ function downloadCompanyCsv() {
     ...state.companyAlerts.map((alert) => [
       alert.createdAt,
       t(`alertTypes.${alert.alertType}`) || alert.alertType || 'general',
-      alert.reporter?.name || '',
-      alert.reporter?.companyName || state.user?.companyName || '',
+      (alert.reporter && alert.reporter.name) || '',
+      (alert.reporter && alert.reporter.companyName) || (state.user && state.user.companyName) || '',
       alert.lat,
       alert.lng,
       alert.note || ''
@@ -1340,15 +1360,18 @@ function renderAuthPanel() {
       </section>
     `;
 
-    document.getElementById('panelShowAlertsBtn')?.addEventListener('click', showCompanyDangerView);
-    document.getElementById('panelDangerBtn')?.addEventListener('click', () => submitAlert('general'));
+    const panelShowAlertsBtn = document.getElementById('panelShowAlertsBtn');
+    const panelDangerBtn = document.getElementById('panelDangerBtn');
+    const shareLocationToggle = document.getElementById('shareLocationToggle');
+    if (panelShowAlertsBtn) panelShowAlertsBtn.addEventListener('click', showCompanyDangerView);
+    if (panelDangerBtn) panelDangerBtn.addEventListener('click', () => submitAlert('general'));
     companyPanel.querySelectorAll('.company-type-btn').forEach((button) => {
       button.addEventListener('click', () => submitAlert(button.dataset.type));
     });
     companyPanel.querySelectorAll('[data-company-score]').forEach((button) => {
       button.addEventListener('click', () => submitRating(Number(button.dataset.companyScore)));
     });
-    document.getElementById('shareLocationToggle')?.addEventListener('click', toggleCompanyLocationSharing);
+    if (shareLocationToggle) shareLocationToggle.addEventListener('click', toggleCompanyLocationSharing);
 
     const memberList = document.getElementById('memberList');
     memberList.innerHTML = '';
@@ -1361,7 +1384,7 @@ function renderAuthPanel() {
         const distance = state.userPos && member.location
           ? formatDistance(distanceMeters(state.userPos.lat, state.userPos.lng, member.location.lat, member.location.lng))
           : '';
-        const updated = member.location?.updatedAt ? formatDate(member.location.updatedAt) : '-';
+        const updated = member.location && member.location.updatedAt ? formatDate(member.location.updatedAt) : '-';
         row.innerHTML = `
           <span class="member-main">
             <strong>${escapeHtml(member.name)}</strong>
@@ -1378,7 +1401,7 @@ function renderAuthPanel() {
       memberList.querySelectorAll('.member-focus-btn').forEach((button) => {
         button.addEventListener('click', () => {
           const member = state.companyMembers.find((entry) => entry.id === button.dataset.memberId);
-          if (member?.location) {
+          if (member && member.location) {
             map.flyTo([member.location.lat, member.location.lng], Math.max(map.getZoom(), 16), { duration: 0.55 });
           }
         });
@@ -1418,14 +1441,14 @@ function setUserPosition(lat, lng, announce = true) {
     showStatus(formatCoords(lat, lng));
   }
   drawGuidance();
-  const mayShareCompanyLocation = state.user?.role !== 'company' || state.shareCompanyLocation;
+  const mayShareCompanyLocation = !state.user || state.user.role !== 'company' || state.shareCompanyLocation;
   if (state.token && mayShareCompanyLocation) {
     api('/api/location', {
       method: 'POST',
       body: JSON.stringify({ token: state.token, lat, lng, share: true })
     })
       .then(() => {
-        if (state.user?.role === 'company') {
+        if (state.user && state.user.role === 'company') {
           loadProfile().catch(() => {});
         }
       })
@@ -1442,7 +1465,7 @@ function centerOnUser(lat, lng) {
   state.followUser = true;
   map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate: true });
   refreshMapSize();
-  mapPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (mapPanel) mapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function initialsForName(name) {
@@ -1515,7 +1538,7 @@ function renderMap() {
   }
   state.cellCircles = [];
 
-  const data = state.legendFilter?.data || state.mapData;
+  const data = (state.legendFilter && state.legendFilter.data) || state.mapData;
   if (!data) return;
   data.cells.forEach((cell) => {
     const displayScore = Number(cell.averageScore.toFixed(1));
@@ -1602,12 +1625,12 @@ function drawCompanyMembers() {
   layers.people.clearLayers();
 
   let drewTeamMember = false;
-  if (state.user?.role === 'company') {
+  if (state.user && state.user.role === 'company') {
     state.companyMembers.forEach((member) => {
       if (!member.location) return;
       drewTeamMember = true;
       const color = member.companyColor || '#2563eb';
-      const currentClass = member.id === state.user?.id ? ' is-current' : '';
+      const currentClass = state.user && member.id === state.user.id ? ' is-current' : '';
       const label = initialsForName(member.name);
       L.marker([member.location.lat, member.location.lng], {
         icon: iconHtml(
@@ -1629,7 +1652,7 @@ function drawCompanyMembers() {
   if (drewTeamMember) return;
 
   state.companyMembers.forEach((member) => {
-    if (!member.location || member.id === state.user?.id) return;
+    if (!member.location || (state.user && member.id === state.user.id)) return;
     L.marker([member.location.lat, member.location.lng], {
       icon: iconHtml(`<div class="user-badge-marker">👥</div>`, 'user-marker', [46, 46], [23, 23])
     })
@@ -1677,15 +1700,15 @@ async function loadProfile() {
     const payload = await api(`/api/me?token=${encodeURIComponent(state.token)}`);
     state.user = payload.user;
     state.companyMembers = payload.companyMembers || [];
-    if (state.user?.role === 'company') {
+    if (state.user && state.user.role === 'company') {
       const feed = await api(`/api/company-feed?token=${encodeURIComponent(state.token)}`).catch(() => null);
-      state.companyAlerts = feed?.alerts || [];
+      state.companyAlerts = feed && feed.alerts ? feed.alerts : [];
     } else {
       state.companyAlerts = [];
     }
     loginButton.textContent = state.user.name;
     updateCurrentAlertsButton();
-  } catch {
+  } catch (error) {
     state.token = '';
     sessionStorage.removeItem('sicherodernicht-token');
     localStorage.removeItem('sicherodernicht-token');
@@ -1744,14 +1767,14 @@ async function submitLogin() {
       body: JSON.stringify({
         code,
         pin,
-        lat: state.userPos?.lat,
-        lng: state.userPos?.lng
+        lat: state.userPos ? state.userPos.lat : null,
+        lng: state.userPos ? state.userPos.lng : null
       })
     });
     state.token = payload.token;
     sessionStorage.setItem('sicherodernicht-token', state.token);
     localStorage.removeItem('sicherodernicht-token');
-    if (rememberInput?.checked && hasComfortConsent()) {
+    if (rememberInput && rememberInput.checked && hasComfortConsent()) {
       localStorage.setItem('sicherodernicht-login-code', code);
       localStorage.setItem('sicherodernicht-login-pin', pin);
     } else {
@@ -1762,7 +1785,7 @@ async function submitLogin() {
     loginPopover.classList.add('hidden');
     showStatus(`${t('loggedInAs')} ${payload.user.name}`);
     startPolling();
-  } catch {
+  } catch (error) {
     showStatus(t('loginFailed'));
   }
 }
@@ -1813,7 +1836,8 @@ async function submitAlert(alertType) {
     showStatus(t('selectLocationFirst'));
     return;
   }
-  const note = document.getElementById('alertNote')?.value.trim() || '';
+  const alertNoteInput = document.getElementById('alertNote');
+  const note = alertNoteInput ? alertNoteInput.value.trim() : '';
   await api('/api/alert', {
     method: 'POST',
     body: JSON.stringify({
@@ -1859,7 +1883,7 @@ async function searchPlaces(event) {
     }
 
     showStatus(state.searchResults.length ? state.searchResults[0].label : t('noSearchResults'));
-  } catch {
+  } catch (error) {
     state.searchResults = [];
     renderSearchResults();
     showStatus(t('noSearchResults'));
@@ -1868,16 +1892,20 @@ async function searchPlaces(event) {
 
 async function pollAlerts() {
   await Promise.all([loadMapData(), state.token ? loadProfile() : Promise.resolve()]);
-  const newestAlert = state.mapData?.alerts?.[state.mapData.alerts.length - 1];
+  const alerts = state.mapData && state.mapData.alerts ? state.mapData.alerts : [];
+  const newestAlert = alerts[alerts.length - 1];
   if (newestAlert && newestAlert.id !== latestAlertId) {
     const matchingCompanyAlert = state.companyAlerts.find((entry) => entry.alertId === newestAlert.id);
     const shouldSound =
       latestAlertId &&
-      state.user?.role === 'company' &&
-      matchingCompanyAlert?.reporter?.role === 'company' &&
-      matchingCompanyAlert?.reporter?.id !== state.user.id;
+      state.user &&
+      state.user.role === 'company' &&
+      matchingCompanyAlert &&
+      matchingCompanyAlert.reporter &&
+      matchingCompanyAlert.reporter.role === 'company' &&
+      matchingCompanyAlert.reporter.id !== state.user.id;
     latestAlertId = newestAlert.id;
-    const sourceLabel = matchingCompanyAlert?.reporter?.companyName
+    const sourceLabel = matchingCompanyAlert && matchingCompanyAlert.reporter && matchingCompanyAlert.reporter.companyName
       ? ` · ${matchingCompanyAlert.reporter.companyName}`
       : '';
     alertStrip.textContent = `${t('alertPoll')}: ${t(`alertTypes.${newestAlert.alertType}`) || t('alertTypes.general')}${sourceLabel}`;
@@ -2035,6 +2063,8 @@ window.addEventListener('resize', () => {
 window.addEventListener('orientationchange', refreshMapSize);
 
 window.addEventListener('pagehide', logoutOnAppClose);
+
+installTouchButtonFallback();
 
 languageToggle.addEventListener('click', toggleLanguage);
 cookieSettingsBtn.addEventListener('click', () => showConsentBanner(true));
