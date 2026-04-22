@@ -450,7 +450,8 @@ function installTouchButtonFallback() {
     const button = closestButton(event.target);
     if (!button || button.disabled) return;
     event.preventDefault();
-    button.click();
+    event.stopPropagation();
+    activateButtonFromTouch(button);
   }, { passive: false });
 }
 
@@ -919,6 +920,17 @@ function getCurrentPositionOnce() {
   });
 }
 
+async function ensureUserPosition() {
+  if (state.userPos) return state.userPos;
+  showStatus(t('locateMe'));
+  const position = await getCurrentPositionOnce();
+  if (position) {
+    centerOnUser(position.lat, position.lng);
+    await loadAreaSummary();
+  }
+  return position;
+}
+
 async function showCompanyDangerView() {
   if (!state.user || state.user.role !== 'company') {
     showStatus(t('companyOnlyEmergency'));
@@ -1063,6 +1075,7 @@ function renderRatingButtons() {
     button.type = 'button';
     button.className = `score-button score-${score}`;
     button.dataset.label = t(`scores.${score}`);
+    button.dataset.score = score;
     button.textContent = score;
     button.addEventListener('click', () => submitRating(score));
     ratingButtons.appendChild(button);
@@ -1121,6 +1134,7 @@ function renderFunButtons() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'fun-button';
+    button.dataset.tag = tag;
     button.innerHTML = `
       <span class="fun-button-icon">${funIcons[tag]}</span>
       <span class="fun-button-text">${t(`funLabels.${tag}`)}</span>
@@ -1723,8 +1737,11 @@ async function loadProfile() {
 
 async function submitRating(score) {
   if (!state.userPos) {
-    showStatus(t('selectLocationFirst'));
-    return;
+    const position = await ensureUserPosition();
+    if (!position) {
+      showStatus(t('selectLocationFirst'));
+      return;
+    }
   }
   try {
     await api('/api/rate', {
@@ -1742,12 +1759,16 @@ async function submitRating(score) {
 async function submitFun(tag) {
   const targetPos = state.pendingFunPos || state.userPos;
   if (!targetPos) {
-    showStatus(t('selectLocationFirst'));
-    return;
+    const position = await ensureUserPosition();
+    if (!position) {
+      showStatus(t('selectLocationFirst'));
+      return;
+    }
   }
+  const finalTargetPos = state.pendingFunPos || state.userPos;
   await api('/api/fun', {
     method: 'POST',
-    body: JSON.stringify({ lat: targetPos.lat, lng: targetPos.lng, tag })
+    body: JSON.stringify({ lat: finalTargetPos.lat, lng: finalTargetPos.lng, tag })
   });
   state.pendingFunPos = null;
   showStatus(t('funSaved'));
@@ -1833,8 +1854,15 @@ function logoutOnAppClose() {
 
 async function submitAlert(alertType) {
   if (!state.token || !state.userPos) {
-    showStatus(t('selectLocationFirst'));
-    return;
+    if (!state.token) {
+      showStatus(t('dangerRegistrationHint'));
+      return;
+    }
+    const position = await ensureUserPosition();
+    if (!position) {
+      showStatus(t('selectLocationFirst'));
+      return;
+    }
   }
   const alertNoteInput = document.getElementById('alertNote');
   const note = alertNoteInput ? alertNoteInput.value.trim() : '';
@@ -2018,6 +2046,99 @@ function autoLocateOnLoad() {
   );
 }
 
+function activateButtonFromTouch(button) {
+  if (button.id === 'locateBtn') {
+    locateMe();
+    return;
+  }
+  if (button.id === 'currentAlertsBtn') {
+    focusNextCurrentAlert();
+    return;
+  }
+  if (button.id === 'mainDangerBtn') {
+    if (!state.user) {
+      showStatus(t('dangerRegistrationHint'));
+      return;
+    }
+    submitAlert('general').catch(() => showStatus(t('selectLocationFirst')));
+    return;
+  }
+  if (button.id === 'funToggle') {
+    toggleFun();
+    return;
+  }
+  if (button.id === 'languageToggle') {
+    toggleLanguage();
+    return;
+  }
+  if (button.id === 'loginButton') {
+    handleLoginButton();
+    return;
+  }
+  if (button.id === 'logoutButton') {
+    logout().catch(() => {});
+    return;
+  }
+  if (button.id === 'necessaryConsentBtn') {
+    saveConsent(false);
+    return;
+  }
+  if (button.id === 'saveConsentBtn') {
+    saveConsent(comfortConsentInput.checked);
+    return;
+  }
+  if (button.id === 'acceptComfortBtn') {
+    saveConsent(true);
+    return;
+  }
+  if (button.id === 'panelShowAlertsBtn') {
+    showCompanyDangerView().catch(() => {});
+    return;
+  }
+  if (button.id === 'panelDangerBtn') {
+    submitAlert('general').catch(() => showStatus(t('selectLocationFirst')));
+    return;
+  }
+  if (button.id === 'shareLocationToggle') {
+    toggleCompanyLocationSharing().catch(() => {});
+    return;
+  }
+  if (button.dataset.score) {
+    submitRating(Number(button.dataset.score)).catch(() => {});
+    return;
+  }
+  if (button.dataset.companyScore) {
+    submitRating(Number(button.dataset.companyScore)).catch(() => {});
+    return;
+  }
+  if (button.dataset.type) {
+    submitAlert(button.dataset.type).catch(() => showStatus(t('selectLocationFirst')));
+    return;
+  }
+  if (button.classList.contains('legend-show-button')) {
+    startLegendFilter(Number(button.dataset.score)).catch(() => {});
+    return;
+  }
+  if (button.classList.contains('fun-button') && button.dataset.tag) {
+    submitFun(button.dataset.tag).catch(() => {});
+    return;
+  }
+  button.click();
+}
+
+function handleLoginButton() {
+  if (state.user) {
+    const panelTop = authPanel.getBoundingClientRect().top + window.scrollY - 18;
+    window.scrollTo({ top: panelTop, behavior: 'smooth' });
+    return;
+  }
+
+  loginPopover.classList.toggle('hidden');
+  if (!loginPopover.classList.contains('hidden')) {
+    renderLoginPopover();
+  }
+}
+
 map.on('click', async (event) => {
   state.followUser = false;
   setUserPosition(event.latlng.lat, event.latlng.lng);
@@ -2083,18 +2204,7 @@ mainDangerBtn.addEventListener('click', () => {
 funToggle.addEventListener('click', toggleFun);
 searchForm.addEventListener('submit', searchPlaces);
 logoutButton.addEventListener('click', logout);
-loginButton.addEventListener('click', () => {
-  if (state.user) {
-    const panelTop = authPanel.getBoundingClientRect().top + window.scrollY - 18;
-    window.scrollTo({ top: panelTop, behavior: 'smooth' });
-    return;
-  }
-
-  loginPopover.classList.toggle('hidden');
-  if (!loginPopover.classList.contains('hidden')) {
-    renderLoginPopover();
-  }
-});
+loginButton.addEventListener('click', handleLoginButton);
 
 async function bootstrap() {
   refreshMapSize();

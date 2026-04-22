@@ -384,21 +384,26 @@ function sendTestAccessPage(res) {
     <p class="hint">Nach erfolgreicher Eingabe bleibt der Zugang auf diesem Gerät einige Tage gespeichert.</p>
   </main>
   <script>
-    document.getElementById('testAccessForm').addEventListener('submit', async (event) => {
+    document.getElementById('testAccessForm').addEventListener('submit', function (event) {
       event.preventDefault();
-      const error = document.getElementById('error');
+      var error = document.getElementById('error');
+      var code = document.getElementById('testCode').value.trim();
+      var request = new XMLHttpRequest();
       error.textContent = '';
-      const code = document.getElementById('testCode').value.trim();
-      const response = await fetch('/api/test-access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
-      }).catch(() => null);
-      if (response && response.ok) {
-        window.location.reload();
-        return;
-      }
-      error.textContent = 'Der Testcode stimmt nicht.';
+      request.open('POST', '/api/test-access', true);
+      request.setRequestHeader('Content-Type', 'application/json');
+      request.onreadystatechange = function () {
+        if (request.readyState !== 4) return;
+        if (request.status >= 200 && request.status < 300) {
+          window.location.reload();
+          return;
+        }
+        error.textContent = 'Der Testcode stimmt nicht.';
+      };
+      request.onerror = function () {
+        error.textContent = 'Verbindung fehlgeschlagen.';
+      };
+      request.send(JSON.stringify({ code: code }));
     });
   </script>
 </body>
