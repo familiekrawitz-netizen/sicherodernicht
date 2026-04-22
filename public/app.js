@@ -76,6 +76,7 @@ const texts = {
     radiusHint: 'Automatisch auf 100 m gerundet',
     funMode: 'Spaß gehabt?',
     funModeHint: 'Schönen Moment markieren',
+    ratingInvite: 'Wie ist es hier? Teile es mit Anderen',
     emergency: 'Notfall',
     emergencyInfo: 'Nur für registrierte Firmennutzer',
     emergencyCall: 'Bei akuter Gefahr 110 anrufen',
@@ -224,6 +225,7 @@ const texts = {
     radiusHint: 'Automatically rounded to 100 m',
     funMode: 'Had fun?',
     funModeHint: 'Mark a nice moment',
+    ratingInvite: 'How is it here? Share it with others',
     emergency: 'Emergency',
     emergencyInfo: 'Company accounts only',
     emergencyCall: 'In immediate danger: 110',
@@ -400,7 +402,6 @@ const registeredPanel = document.getElementById('registeredPanel');
 const locateBtn = document.getElementById('locateBtn');
 const currentAlertsBtn = document.getElementById('currentAlertsBtn');
 const mainDangerBtn = document.getElementById('mainDangerBtn');
-const emergencyToggle = document.getElementById('emergencyToggle');
 const funToggle = document.getElementById('funToggle');
 const viewSwitcher = document.getElementById('viewSwitcher');
 const submitStatus = document.getElementById('submitStatus');
@@ -1099,8 +1100,6 @@ function renderAuthPanel() {
   applyUserMode();
   registeredPanel.classList.toggle('hidden', !(state.user && state.user.role === 'company'));
   logoutButton.classList.add('hidden');
-  emergencyToggle.disabled = false;
-  emergencyToggle.classList.toggle('is-locked', !(state.user && state.user.role === 'company'));
   updateDangerButtonState();
   if (!state.user) {
     authPanel.innerHTML = '';
@@ -1881,7 +1880,6 @@ mainDangerBtn.addEventListener('click', () => {
   }
   submitAlert('general');
 });
-emergencyToggle.addEventListener('click', toggleEmergency);
 funToggle.addEventListener('click', toggleFun);
 searchForm.addEventListener('submit', searchPlaces);
 logoutButton.addEventListener('click', logout);

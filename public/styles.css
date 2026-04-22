@@ -128,15 +128,6 @@ body.design-friendly .view-button.is-active {
   color: white;
 }
 
-body.design-friendly .inline-emergency-stack {
-  background: rgba(255, 241, 242, 0.86);
-  border-color: rgba(239, 68, 68, 0.22);
-}
-
-body.design-friendly .inline-emergency-bottom {
-  color: #b91c1c;
-}
-
 body.design-friendly .report-chip {
   background: rgba(255, 255, 255, 0.72);
   border-color: rgba(42, 68, 63, 0.1);
@@ -363,31 +354,6 @@ a {
   margin-top: 14px;
 }
 
-.inline-emergency-stack {
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  min-height: 46px;
-  padding: 8px 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(239, 68, 68, 0.18);
-  background: rgba(127, 29, 29, 0.18);
-  line-height: 1.15;
-}
-
-.inline-emergency-top {
-  color: var(--text);
-  font-size: 0.77rem;
-  font-weight: 700;
-}
-
-.inline-emergency-bottom {
-  color: #ffd5d5;
-  font-size: 0.77rem;
-  font-weight: 700;
-}
-
 .search-form {
   align-items: stretch;
 }
@@ -519,6 +485,14 @@ a {
   font-size: 0.74rem;
   font-weight: 800;
   line-height: 1.15;
+}
+
+.rating-invite-line {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 850;
+  letter-spacing: 0.01em;
 }
 
 .fun-invite.is-active {
