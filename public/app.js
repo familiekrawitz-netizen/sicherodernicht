@@ -45,6 +45,7 @@ const state = {
   tickerItems: [],
   legendFilter: null,
   currentAlertIndex: -1,
+  companyDangerView: false,
   shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('sicherodernicht-share-company-location') !== 'off' : true
 };
 
@@ -145,7 +146,9 @@ const texts = {
     activeAlerts24: 'Gefahren letzte 24h',
     visibleTeam: 'sichtbare Teamstandorte',
     ownLocationStatus: 'Eigener Standort',
-    showNextAlert: 'Aktuelle Gefahr zeigen',
+    showNextAlert: 'Aktuelle Gefahren zeigen',
+    companyDangerRadiusShown: 'Gefahren im 50-km-Umkreis angezeigt',
+    companyDangerOutsideHint: 'Nächste Gefahr außerhalb des 50-km-Umkreises',
     exportData: 'Export CSV',
     responseChain: 'Rettungskette',
     responseChainText: 'Lage prüfen, Team warnen, bei akuter Gefahr 110 anrufen. Meldung kurz, sachlich und ohne unnötige Personendaten erfassen.',
@@ -293,7 +296,9 @@ const texts = {
     activeAlerts24: 'Dangers last 24h',
     visibleTeam: 'visible team locations',
     ownLocationStatus: 'Own location',
-    showNextAlert: 'Show current danger',
+    showNextAlert: 'Show current dangers',
+    companyDangerRadiusShown: 'Dangers shown within 50 km',
+    companyDangerOutsideHint: 'Nearest danger outside the 50 km radius',
     exportData: 'Export CSV',
     responseChain: 'Response chain',
     responseChainText: 'Check the situation, warn the team, call 110 in immediate danger. Keep reports short, factual and free of unnecessary personal data.',
@@ -350,6 +355,7 @@ const texts = {
 const scoreDefinitions = [1, 2, 3, 4, 5];
 const funTags = ['first_kiss', 'sport_success', 'best_recovery', 'kind_people', 'interesting_area'];
 const companyAlertTypes = ['gun', 'knife', 'violence', 'mob'];
+const COMPANY_DANGER_RADIUS_METERS = 50000;
 const funIcons = {
   first_kiss: '💋',
   sport_success: '🏆',
@@ -374,6 +380,7 @@ const layers = {
   cells: L.layerGroup().addTo(map),
   effects: L.layerGroup().addTo(map),
   alerts: L.layerGroup().addTo(map),
+  dangerView: L.layerGroup().addTo(map),
   emergency: L.layerGroup().addTo(map),
   fun: L.layerGroup().addTo(map),
   people: L.layerGroup().addTo(map),
@@ -453,6 +460,10 @@ function saveConsent(comfort) {
 function applyUserMode() {
   const isCompany = state.user?.role === 'company';
   document.body.classList.toggle('company-mode', isCompany);
+  if (!isCompany) {
+    state.companyDangerView = false;
+    layers.dangerView.clearLayers();
+  }
   if (isCompany && state.funMode) {
     state.funMode = false;
     state.pendingFunPos = null;
@@ -704,6 +715,105 @@ function currentDangerAlerts() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+function currentDangerAlertsWithDistance(center) {
+  return currentDangerAlerts()
+    .map((entry) => ({
+      ...entry,
+      distance: distanceMeters(center.lat, center.lng, entry.lat, entry.lng)
+    }))
+    .sort((a, b) => a.distance - b.distance);
+}
+
+function companyDangerBounds(center) {
+  const latDelta = COMPANY_DANGER_RADIUS_METERS / 111320;
+  const lngDelta = COMPANY_DANGER_RADIUS_METERS / (111320 * Math.max(Math.cos((center.lat * Math.PI) / 180), 0.2));
+  return L.latLngBounds(
+    [center.lat - latDelta, center.lng - lngDelta],
+    [center.lat + latDelta, center.lng + lngDelta]
+  );
+}
+
+function edgeLatLngToward(center, target) {
+  const size = map.getSize();
+  const centerPoint = map.latLngToContainerPoint([center.lat, center.lng]);
+  const targetPoint = map.latLngToContainerPoint([target.lat, target.lng]);
+  const dx = targetPoint.x - centerPoint.x;
+  const dy = targetPoint.y - centerPoint.y;
+  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return L.latLng(center.lat, center.lng);
+
+  const margin = 38;
+  const scales = [];
+  if (dx > 0) scales.push((size.x - margin - centerPoint.x) / dx);
+  if (dx < 0) scales.push((margin - centerPoint.x) / dx);
+  if (dy > 0) scales.push((size.y - margin - centerPoint.y) / dy);
+  if (dy < 0) scales.push((margin - centerPoint.y) / dy);
+
+  const scale = Math.min(...scales.filter((value) => value > 0 && Number.isFinite(value)));
+  if (!Number.isFinite(scale)) return L.latLng(center.lat, center.lng);
+  const point = L.point(
+    Math.min(size.x - margin, Math.max(margin, centerPoint.x + dx * scale)),
+    Math.min(size.y - margin, Math.max(margin, centerPoint.y + dy * scale))
+  );
+  return map.containerPointToLatLng(point);
+}
+
+function renderCompanyDangerViewLayer() {
+  layers.dangerView.clearLayers();
+  if (!state.companyDangerView || state.user?.role !== 'company' || !state.userPos) return;
+
+  const alerts = currentDangerAlertsWithDistance(state.userPos);
+  const inRadius = alerts.filter((entry) => entry.distance <= COMPANY_DANGER_RADIUS_METERS);
+  const nearestOutside = alerts.find((entry) => entry.distance > COMPANY_DANGER_RADIUS_METERS);
+
+  L.circle([state.userPos.lat, state.userPos.lng], {
+    radius: COMPANY_DANGER_RADIUS_METERS,
+    color: '#dc2626',
+    weight: 1.5,
+    opacity: 0.55,
+    fillColor: '#ef4444',
+    fillOpacity: 0.035,
+    interactive: false
+  }).addTo(layers.dangerView);
+
+  inRadius.forEach((entry) => {
+    const marker = L.marker([entry.lat, entry.lng], {
+      icon: iconHtml(
+        '<div class="danger-pin"><span class="danger-pin-head"><span>!</span></span><span class="danger-pin-point"></span></div>',
+        'danger-focus-marker',
+        [48, 62],
+        [24, 58]
+      )
+    });
+    marker.bindPopup(`
+      <strong>${t(`alertTypes.${entry.alertType}`) || t('alertTypes.general')}</strong><br>
+      ${escapeHtml(entry.reporter?.name || '')}<br>
+      ${formatDate(entry.createdAt)}<br>
+      ${formatDistance(entry.distance)} ${state.language === 'de' ? 'entfernt' : 'away'}<br>
+      ${escapeHtml(entry.note || '')}
+    `);
+    marker.addTo(layers.dangerView);
+  });
+
+  if (nearestOutside) {
+    const arrowLatLng = edgeLatLngToward(state.userPos, nearestOutside);
+    const bearing = bearingDeg(state.userPos, nearestOutside);
+    const marker = L.marker(arrowLatLng, {
+      icon: iconHtml(
+        `<div class="danger-edge-arrow" style="--bearing:${bearing}deg"><span>➤</span></div>`,
+        'danger-arrow-marker',
+        [46, 46],
+        [23, 23]
+      )
+    });
+    marker.bindPopup(`
+      <strong>${t('companyDangerOutsideHint')}</strong><br>
+      ${t(`alertTypes.${nearestOutside.alertType}`) || t('alertTypes.general')}<br>
+      ${formatDistance(nearestOutside.distance)}
+    `);
+    marker.addTo(layers.dangerView);
+  }
+}
+
 function updateCurrentAlertsButton() {
   const isCompany = state.user?.role === 'company';
   const alerts = currentDangerAlerts();
@@ -752,6 +862,55 @@ function focusNextCurrentAlert() {
   map.flyTo([alert.lat, alert.lng], Math.max(map.getZoom(), 16), { duration: 0.65 });
   showStatus(`${t('alertPoll')}: ${t(`alertTypes.${alert.alertType}`) || t('alertTypes.general')}`);
   mapPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function getCurrentPositionOnce() {
+  if (state.userPos) return Promise.resolve(state.userPos);
+  if (!navigator.geolocation) {
+    showStatus(t('locateError'));
+    return Promise.resolve(null);
+  }
+  if (!window.isSecureContext && location.hostname !== 'localhost') {
+    showStatus(t('secureContext'));
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserPosition(position.coords.latitude, position.coords.longitude, false);
+        resolve(state.userPos);
+      },
+      () => {
+        showStatus(t('locateError'));
+        resolve(null);
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+  });
+}
+
+async function showCompanyDangerView() {
+  if (state.user?.role !== 'company') {
+    showStatus(t('companyOnlyEmergency'));
+    return;
+  }
+
+  if (state.legendFilter) {
+    stopLegendFilter(false);
+  }
+
+  const center = await getCurrentPositionOnce();
+  if (!center) return;
+
+  state.companyDangerView = true;
+  const alerts = currentDangerAlertsWithDistance(center);
+  const inRadius = alerts.filter((entry) => entry.distance <= COMPANY_DANGER_RADIUS_METERS);
+  map.fitBounds(companyDangerBounds(center), { padding: [30, 30], animate: true });
+  renderMap();
+  window.setTimeout(renderCompanyDangerViewLayer, 320);
+  mapPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showStatus(`${inRadius.length} ${t('companyDangerRadiusShown')}`);
 }
 
 function renderReportTicker() {
@@ -896,6 +1055,9 @@ function stopLegendFilter(announce = false) {
 
 async function startLegendFilter(score) {
   if (![1, 2, 3, 4, 5, 6].includes(score)) return;
+
+  state.companyDangerView = false;
+  layers.dangerView.clearLayers();
 
   if (state.legendFilter?.timerId) {
     clearInterval(state.legendFilter.timerId);
@@ -1163,7 +1325,7 @@ function renderAuthPanel() {
       </section>
     `;
 
-    document.getElementById('panelShowAlertsBtn')?.addEventListener('click', focusNextCurrentAlert);
+    document.getElementById('panelShowAlertsBtn')?.addEventListener('click', showCompanyDangerView);
     document.getElementById('panelDangerBtn')?.addEventListener('click', () => submitAlert('general'));
     companyPanel.querySelectorAll('.company-type-btn').forEach((button) => {
       button.addEventListener('click', () => submitAlert(button.dataset.type));
@@ -1258,6 +1420,7 @@ function setUserPosition(lat, lng, announce = true) {
   if (state.followUser) {
     map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate: true });
   }
+  renderCompanyDangerViewLayer();
 }
 
 function centerOnUser(lat, lng) {
@@ -1329,6 +1492,7 @@ function renderMap() {
   layers.cells.clearLayers();
   layers.effects.clearLayers();
   layers.alerts.clearLayers();
+  layers.dangerView.clearLayers();
   layers.fun.clearLayers();
   if (state.legendFilter) {
     layers.arrows.clearLayers();
@@ -1401,7 +1565,7 @@ function renderMap() {
     marker.addTo(layers.effects);
   });
 
-  data.alerts.forEach((entry) => {
+  if (!state.companyDangerView) data.alerts.forEach((entry) => {
     const companyLogo = entry.companyLogo
       ? `<span class="company-logo-badge" style="background:${entry.companyLogo.color}">${entry.companyLogo.text}</span>`
       : '';
@@ -1420,6 +1584,7 @@ function renderMap() {
   renderCompanyTicker();
   drawCompanyMembers();
   drawGuidance();
+  renderCompanyDangerViewLayer();
 }
 
 function drawCompanyMembers() {
@@ -1842,6 +2007,10 @@ map.on('movestart', () => {
 
 map.on('zoomend', () => {
   renderMap();
+});
+
+map.on('moveend', () => {
+  renderCompanyDangerViewLayer();
 });
 
 window.addEventListener('resize', () => {
