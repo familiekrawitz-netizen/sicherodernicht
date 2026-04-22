@@ -1560,6 +1560,8 @@ body.company-mode .company-rating-grid .score-button {
 
 .ad-slot {
   margin-top: auto;
+  display: grid;
+  gap: 10px;
 }
 
 .ad-card {
@@ -1612,6 +1614,42 @@ body.company-mode .company-rating-grid .score-button {
   margin: 0;
 }
 
+.partner-placeholder-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04)),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.14), rgba(59, 130, 246, 0.12));
+}
+
+.partner-placeholder-card strong,
+.partner-placeholder-card small {
+  display: block;
+}
+
+.partner-placeholder-card small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.partner-placeholder-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 184, 166, 0.14);
+  color: #0f766e;
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
 body.design-friendly .ad-card {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 253, 244, 0.78)),
@@ -1622,6 +1660,12 @@ body.design-friendly .partner-ad-card {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 250, 0.82)),
     radial-gradient(circle at 100% 0%, rgba(201, 0, 63, 0.16), transparent 42%);
+}
+
+body.design-friendly .partner-placeholder-card {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(236, 253, 245, 0.74)),
+    radial-gradient(circle at 100% 0%, rgba(20, 184, 166, 0.14), transparent 42%);
 }
 
 body.design-friendly .ad-card strong::before {
