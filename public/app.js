@@ -136,8 +136,9 @@ const texts = {
     companyModeTitle: 'Einsatzmodus',
     companyModeSubtitle: 'Professionelle Oberfläche: Gefahren melden, Teamlage prüfen, aktuelle Meldungen auf der Karte ansteuern.',
     companyQuickActions: 'Sofortmeldung',
-    companyGeneralDanger: 'Aktuelle Gefahr 6 melden',
+    companyGeneralDanger: 'Aktuelle Gefahr melden',
     companyCategories: 'Gefahrenart auswählen',
+    companyEmergencyNotice: 'Immer zuerst Polizei Tel.: 110, oder Feuerwehr Tel.: 112 informieren.',
     companyPublicRatings: 'Lagebewertung 5 bis 1',
     alertHint: 'Diese Meldung ist nachvollziehbar und für registrierte Nutzer sichtbar.',
     alertPlaceholder: 'Kurzbeschreibung, z. B. Unfall oder Gefahr',
@@ -286,8 +287,9 @@ const texts = {
     companyModeTitle: 'Operations mode',
     companyModeSubtitle: 'Professional interface: report danger, check team status and jump to current alerts on the map.',
     companyQuickActions: 'Immediate report',
-    companyGeneralDanger: 'Report current danger 6',
+    companyGeneralDanger: 'Report current danger',
     companyCategories: 'Choose danger type',
+    companyEmergencyNotice: 'Always inform police Tel.: 110 or fire brigade Tel.: 112 first.',
     companyPublicRatings: 'Area rating 5 to 1',
     alertHint: 'This report is attributable and visible to registered users.',
     alertPlaceholder: 'Short note, e.g. accident or threat',
@@ -1301,6 +1303,7 @@ function renderAuthPanel() {
             .map((type) => `<button type="button" class="company-type-btn company-alert-${type}" data-type="${type}">${t(`alertTypes.${type}`)}</button>`)
             .join('')}
         </div>
+        <p class="company-emergency-notice">${t('companyEmergencyNotice')}</p>
       </section>
 
       <section class="company-operational-card company-rating-card">
