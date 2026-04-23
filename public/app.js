@@ -429,6 +429,7 @@ const mainDangerBtn = document.getElementById('mainDangerBtn');
 const funToggle = document.getElementById('funToggle');
 const viewSwitcher = document.getElementById('viewSwitcher');
 const submitStatus = document.getElementById('submitStatus');
+const sentToast = document.getElementById('sentToast');
 const debugStatus = document.getElementById('debugStatus');
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('searchInput');
@@ -651,15 +652,32 @@ function showStatus(message) {
   submitStatus.textContent = message;
 }
 
+function showSentToast(message) {
+  if (!sentToast) return;
+  sentToast.textContent = message;
+  sentToast.classList.remove('hidden', 'is-visible');
+  void sentToast.offsetWidth;
+  sentToast.classList.add('is-visible');
+  window.setTimeout(() => {
+    sentToast.classList.remove('is-visible');
+  }, 2000);
+}
+
 function showSentBird(button, message = 'Meldung gesendet') {
+  if (!button) {
+    showStatus(message);
+    showSentToast(message);
+    return;
+  }
   const bird = document.createElement('span');
   bird.className = 'sent-bird';
   bird.textContent = '🐦';
   button.appendChild(bird);
   showStatus(message);
+  showSentToast(message);
   window.setTimeout(() => {
     bird.remove();
-  }, 1100);
+  }, 2300);
 }
 
 function debugLog(message) {
