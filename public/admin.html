@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0f172a" />
     <title>sicherodernicht | Verwaltung</title>
-    <link rel="stylesheet" href="/styles.css?v=61" />
+    <link rel="stylesheet" href="/styles.css?v=88" />
   </head>
   <body class="subpage-body">
     <main class="subpage-shell legal-shell">
@@ -94,9 +94,13 @@
               <input id="userCode" required placeholder="max1" />
             </label>
             <label>
-              PIN
-              <input id="userPin" required pattern="[0-9]{5}[A-Za-z]{2}" placeholder="00000aa" />
+              PIN neu setzen
+              <input id="userPin" pattern="[0-9]{5}[A-Za-z]{2}" placeholder="00000aa" />
             </label>
+            <p class="legal-note">
+              Bei neuen Nutzern ist eine PIN erforderlich. Beim Bearbeiten kann das Feld leer bleiben, dann bleibt die
+              bestehende PIN unverändert. Gespeicherte PINs werden nicht angezeigt.
+            </p>
             <label>
               Rolle
               <select id="userRole">
@@ -328,7 +332,8 @@
               <div class="admin-row">
                 <div>
                   <strong>${user.name}</strong><br>
-                  <small>${user.role === 'company' ? 'Firmennutzer' : 'Privatnutzer'} · ${user.code} · ${user.pin}</small><br>
+                  <small>${user.role === 'company' ? 'Firmennutzer' : 'Privatnutzer'} · ${user.code}</small><br>
+                  <small>${user.hasPin ? 'PIN hinterlegt' : 'Keine PIN gesetzt'}</small><br>
                   <small>${user.companyName || 'Keine Firma'}</small>
                 </div>
                 <button class="ghost-button tiny" data-edit-user="${user.id}" type="button">Bearbeiten</button>
@@ -345,7 +350,7 @@
             document.getElementById('userId').value = user.id;
             document.getElementById('userName').value = user.name;
             document.getElementById('userCode').value = user.code;
-            document.getElementById('userPin').value = user.pin;
+            document.getElementById('userPin').value = '';
             document.getElementById('userRole').value = user.role;
             updateCompanySelectState();
             if (user.companyId) userCompany.value = user.companyId;

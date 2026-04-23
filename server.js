@@ -153,7 +153,12 @@ function readStore() {
   try {
     const raw = fs.readFileSync(STORE_FILE, 'utf8');
     const parsed = JSON.parse(raw);
-    return normalizeStore({ ...defaultStore(), ...parsed });
+    const store = normalizeStore({ ...defaultStore(), ...parsed });
+    if (store.__dirty) {
+      delete store.__dirty;
+      writeStore(store);
+    }
+    return store;
   } catch {
     return defaultStore();
   }
@@ -228,17 +233,30 @@ function auditFromAlert(entry) {
 }
 
 function normalizeStore(store) {
+  let changed = false;
   store.alertAudits = Array.isArray(store.alertAudits) ? store.alertAudits : [];
   const migratedAudits = [];
   store.alerts = (store.alerts || []).map((entry) => {
     const audit = auditFromAlert(entry);
     if (audit && !store.alertAudits.some((existing) => existing.alertId === audit.alertId)) {
       migratedAudits.push(audit);
+      changed = true;
     }
     return anonymizedAlert(entry);
   });
   store.alertAudits = [...store.alertAudits, ...migratedAudits];
+  store.users = (store.users || []).map((user) => {
+    if (!user.pin || isStoredPinHash(user.pin)) return user;
+    changed = true;
+    return {
+      ...user,
+      pin: hashPin(user.pin)
+    };
+  });
   pruneStore(store);
+  if (changed) {
+    store.__dirty = true;
+  }
   return store;
 }
 
@@ -576,7 +594,7 @@ function getBearerToken(req) {
 }
 
 function requestToken(req, url) {
-  return getBearerToken(req) || url.searchParams.get('token') || '';
+  return getBearerToken(req);
 }
 
 function findAdminByToken(store, token) {
@@ -601,6 +619,27 @@ function createToken() {
 
 function makeHash(input) {
   return crypto.createHash('sha256').update(input).digest('hex');
+}
+
+function isStoredPinHash(value) {
+  return /^scrypt\$[a-f0-9]{32}\$[a-f0-9]{128}$/i.test(String(value || ''));
+}
+
+function hashPin(pin, salt = crypto.randomBytes(16).toString('hex')) {
+  const digest = crypto.scryptSync(String(pin), salt, 64).toString('hex');
+  return `scrypt$${salt}$${digest}`;
+}
+
+function verifyPin(pin, storedPin) {
+  const provided = String(pin || '');
+  const stored = String(storedPin || '');
+  if (!stored) return false;
+  if (!isStoredPinHash(stored)) {
+    return stored === provided;
+  }
+  const [, salt, expectedHex] = stored.split('$');
+  const actualHex = crypto.scryptSync(provided, salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(actualHex, 'hex'), Buffer.from(expectedHex, 'hex'));
 }
 
 function viewerFingerprint(req, cellId) {
@@ -1016,12 +1055,12 @@ function publicUserForAdmin(user) {
   return {
     id: user.id,
     code: user.code,
-    pin: user.pin,
     role: user.role,
     name: user.name,
     companyId: user.companyId,
     companyName: user.companyName,
-    lastKnownLocation: user.lastKnownLocation
+    lastKnownLocation: user.lastKnownLocation,
+    hasPin: Boolean(user.pin)
   };
 }
 
@@ -1317,9 +1356,14 @@ const server = http.createServer(async (req, res) => {
       const role = parsed.role === 'company' ? 'company' : 'private';
       const companyId = role === 'company' ? String(parsed.companyId || '').trim() : null;
       const company = companyId ? store.companies.find((entry) => entry.id === companyId) || null : null;
+      const existing = store.users.find((user) => user.id === id);
 
-      if (!name || !code || !isValidManagedPin(pin)) {
-        sendJson(res, 400, { error: 'Nutzer braucht Name, Login-Code und PIN im Format 00000aa' });
+      if (!name || !code || (!existing && !isValidManagedPin(pin))) {
+        sendJson(res, 400, { error: 'Nutzer braucht Name, Login-Code und bei Neuanlage eine PIN im Format 00000aa' });
+        return;
+      }
+      if (existing && pin && !isValidManagedPin(pin)) {
+        sendJson(res, 400, { error: 'Neue PIN muss im Format 00000aa angegeben werden' });
         return;
       }
       if (role === 'company' && !company) {
@@ -1331,11 +1375,10 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const existing = store.users.find((user) => user.id === id);
       const user = {
         id,
         code,
-        pin,
+        pin: pin ? hashPin(pin) : existing?.pin || '',
         role,
         name,
         companyId: role === 'company' ? company.id : null,
@@ -1454,7 +1497,7 @@ const server = http.createServer(async (req, res) => {
       const pin = String(parsed.pin || '').trim();
       const lat = Number(parsed.lat);
       const lng = Number(parsed.lng);
-      const user = store.users.find((entry) => entry.code === code && entry.pin === pin);
+      const user = store.users.find((entry) => entry.code === code && verifyPin(pin, entry.pin));
 
       if (!user) {
         sendJson(res, 401, { error: 'Login fehlgeschlagen' });
