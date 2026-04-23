@@ -699,15 +699,24 @@ function showSentBird(button, message = 'Meldung gesendet') {
     showSentToast(message);
     return;
   }
+  const rect = button.getBoundingClientRect();
+  const startX = rect.left + rect.width * 0.52;
+  const startY = rect.top + rect.height * 0.45;
+  const flightX = Math.max(180, window.innerWidth - startX + 120);
+  const flightY = -Math.max(120, startY * 0.34 + 90);
   const bird = document.createElement('span');
   bird.className = 'sent-bird';
+  bird.style.setProperty('--bird-start-x', `${startX}px`);
+  bird.style.setProperty('--bird-start-y', `${startY}px`);
+  bird.style.setProperty('--bird-flight-x', `${flightX}px`);
+  bird.style.setProperty('--bird-flight-y', `${flightY}px`);
   bird.textContent = '🐦';
-  button.appendChild(bird);
+  document.body.appendChild(bird);
   showStatus(message);
   showSentToast(message);
   window.setTimeout(() => {
     bird.remove();
-  }, 2300);
+  }, 3800);
 }
 
 function debugLog(message) {
