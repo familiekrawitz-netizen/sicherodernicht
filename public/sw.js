@@ -1,5 +1,5 @@
-const CACHE_NAME = 'sicherodernicht-v71';
-const APP_SHELL = ['/', '/index.html', '/sicherheit.html', '/styles.css?v=79', '/app.js?v=95', '/manifest.json?v=48', '/assets/biss-logo.svg'];
+const CACHE_NAME = 'sicherodernicht-v72';
+const APP_SHELL = ['/', '/index.html', '/sicherheit.html', '/styles.css?v=80', '/app.js?v=96', '/manifest.json?v=48', '/assets/biss-logo.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -20,6 +20,8 @@ self.addEventListener('fetch', (event) => {
 
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) return;
+  if (requestUrl.pathname.startsWith('/api/')) return;
+  if (event.request.headers.has('authorization')) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

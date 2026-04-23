@@ -17,8 +17,8 @@ const PRIVATE_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const COMPANY_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
 const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
-const ADMIN_CODE = String(process.env.ADMIN_CODE || 'peter').trim().toLowerCase();
-const ADMIN_PIN = String(process.env.ADMIN_PIN || '97531pk').trim();
+const ADMIN_CODE = String(process.env.ADMIN_CODE || '').trim().toLowerCase();
+const ADMIN_PIN = String(process.env.ADMIN_PIN || '').trim();
 const TEST_ACCESS_CODE = String(process.env.TEST_ACCESS_CODE || '').trim();
 const TEST_ACCESS_COOKIE = 'sicherodernicht_test_access';
 const TEST_ACCESS_TTL_MS = 1000 * 60 * 60 * 24 * 14;
@@ -31,48 +31,7 @@ const defaultStore = () => ({
   sessions: [],
   adminSessions: [],
   cooldowns: [],
-  users: [
-    {
-      id: 'u-private-anna',
-      code: 'anna',
-      pin: '12345ab',
-      role: 'private',
-      name: 'Anna Beispiel',
-      companyId: null,
-      companyName: null,
-      lastKnownLocation: null
-    },
-    {
-      id: 'u-company-sven',
-      code: 'safeguard1',
-      pin: '24680sg',
-      role: 'company',
-      name: 'Sven Leitstelle',
-      companyId: 'company-safeguard',
-      companyName: 'SafeGuard',
-      lastKnownLocation: null
-    },
-    {
-      id: 'u-company-lina',
-      code: 'safeguard2',
-      pin: '86420sg',
-      role: 'company',
-      name: 'Lina Streife',
-      companyId: 'company-safeguard',
-      companyName: 'SafeGuard',
-      lastKnownLocation: null
-    },
-    {
-      id: 'u-company-cem',
-      code: 'cityshield',
-      pin: '11220cs',
-      role: 'company',
-      name: 'Cem Einsatz',
-      companyId: 'company-cityshield',
-      companyName: 'CityShield',
-      lastKnownLocation: null
-    }
-  ],
+  users: [],
   companies: [
     {
       id: 'company-safeguard',
@@ -1152,12 +1111,6 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 200, {
       appName: 'sicherodernicht',
       defaultLanguage: 'de',
-      demoAccounts: [
-        { code: 'anna', pin: '12345ab', role: 'private' },
-        { code: 'safeguard1', pin: '24680sg', role: 'company' },
-        { code: 'safeguard2', pin: '86420sg', role: 'company' },
-        { code: 'cityshield', pin: '11220cs', role: 'company' }
-      ],
       companies: companySummary(store),
       emergencyPlaces: store.emergencyPlaces
     });
@@ -1245,6 +1198,11 @@ const server = http.createServer(async (req, res) => {
       const parsed = JSON.parse((await readBody(req)) || '{}');
       const code = String(parsed.code || '').trim().toLowerCase();
       const pin = String(parsed.pin || '').trim();
+
+      if (!ADMIN_CODE || !ADMIN_PIN) {
+        sendJson(res, 503, { error: 'Admin-Zugang ist nicht konfiguriert' });
+        return;
+      }
 
       if (code !== ADMIN_CODE || pin !== ADMIN_PIN) {
         sendJson(res, 401, { error: 'Admin-Login fehlgeschlagen' });
@@ -1357,7 +1315,7 @@ const server = http.createServer(async (req, res) => {
       const company = companyId ? store.companies.find((entry) => entry.id === companyId) || null : null;
 
       if (!name || !code || !isValidManagedPin(pin)) {
-        sendJson(res, 400, { error: 'Nutzer braucht Name, Login-Code und PIN im Format 12345ab' });
+        sendJson(res, 400, { error: 'Nutzer braucht Name, Login-Code und PIN im Format 00000aa' });
         return;
       }
       if (role === 'company' && !company) {
@@ -1541,7 +1499,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/me' && req.method === 'GET') {
-    const token = url.searchParams.get('token') || '';
+    const token = getBearerToken(req);
     const auth = findUserByToken(store, token);
     if (!auth) {
       sendJson(res, 401, { error: 'Nicht angemeldet' });
@@ -1674,7 +1632,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/company-feed' && req.method === 'GET') {
-    const token = url.searchParams.get('token') || '';
+    const token = getBearerToken(req);
     const auth = findUserByToken(store, token);
     if (!auth) {
       sendJson(res, 401, { error: 'Nicht angemeldet' });

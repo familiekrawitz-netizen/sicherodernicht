@@ -59,6 +59,8 @@ const texts = {
     heroCopy: 'Teile mit anderen, wie Du dich an einem bestimmten Ort gefühlt hast und wo Du viel Spaß hattest. Die Karte zeigt Dir, wie andere Menschen die Umgebung bewerten, ohne bestimmte Geschäfte oder Personen herauszustellen.',
     locateMe: 'Mein Standort',
     locateActionHint: 'freigeben · zentrieren · anzeigen',
+    locationDisclosureDefault: 'Standort wird erst nach deinem Tippen abgefragt. Er wird zum Zentrieren, Anzeigen und Bewerten deiner Umgebung genutzt.',
+    locationDisclosureCompany: 'Firmenmodus: Wenn „Meinen Standort teilen“ aktiv ist, wird dein gerundeter Standort an den Server gesendet und Teammitgliedern deiner Firma angezeigt. Du kannst das Teilen jederzeit ausschalten.',
     todayMode: 'Heute',
     thisWeek: 'Diese Woche',
     thisMonth: 'Dieser Monat',
@@ -127,12 +129,12 @@ const texts = {
     loginIntro: 'Demo-Login fur Privat und Unternehmen. Rollen steuern, welche Sicherheitsfunktionen sichtbar sind.',
     privateAccess: 'Privatzugang',
     companyAccess: 'Firmenzugang',
-    privateDemo: 'Demo privat: anna / 12345ab',
-    companyDemo: 'Demo firma: safeguard1 / 24680sg',
+    privateDemo: 'Privatzugang: Daten werden vom Admin vergeben.',
+    companyDemo: 'Firmenzugang: Daten werden vom Admin vergeben.',
     loginCode: 'Login-Code',
     loginPin: 'PIN',
     loginSubmit: 'Einloggen',
-    rememberLogin: 'Login-Daten auf diesem Gerät merken',
+    rememberLogin: 'Login-Code auf diesem Gerät merken',
     loggedInAs: 'Angemeldet als',
     alertButton: 'Alarmmeldung 6 senden',
     dangerButton: 'aktuelle Gefahr',
@@ -216,6 +218,8 @@ const texts = {
     heroCopy: 'Share in seconds how a place feels right now. The map shows beautiful, neutral and unsafe areas without exposing individual shops or private people.',
     locateMe: 'My location',
     locateActionHint: 'allow · center · show',
+    locationDisclosureDefault: 'Location is requested only after you tap. It is used to center, show and rate your surroundings.',
+    locationDisclosureCompany: 'Company mode: If “Share my location” is active, your rounded location is sent to the server and shown to team members in your company. You can turn sharing off at any time.',
     todayMode: 'Today',
     thisWeek: 'This week',
     thisMonth: 'This month',
@@ -284,12 +288,12 @@ const texts = {
     loginIntro: 'Demo login for private and company users. Roles decide which safety controls become visible.',
     privateAccess: 'Private access',
     companyAccess: 'Company access',
-    privateDemo: 'Private demo: anna / 12345ab',
-    companyDemo: 'Company demo: safeguard1 / 24680sg',
+    privateDemo: 'Private access: credentials are assigned by the admin.',
+    companyDemo: 'Company access: credentials are assigned by the admin.',
     loginCode: 'Login code',
     loginPin: 'PIN',
     loginSubmit: 'Log in',
-    rememberLogin: 'Remember login details on this device',
+    rememberLogin: 'Remember login code on this device',
     loggedInAs: 'Logged in as',
     alertButton: 'Send alert 6',
     dangerButton: 'current danger',
@@ -424,6 +428,7 @@ const logoutButton = document.getElementById('logoutButton');
 const loginPopover = document.getElementById('loginPopover');
 const registeredPanel = document.getElementById('registeredPanel');
 const locateBtn = document.getElementById('locateBtn');
+const locationDisclosure = document.getElementById('locationDisclosure');
 const currentAlertsBtn = document.getElementById('currentAlertsBtn');
 const mainDangerBtn = document.getElementById('mainDangerBtn');
 const funToggle = document.getElementById('funToggle');
@@ -517,6 +522,13 @@ function applyUserMode() {
     state.pendingFunPos = null;
     layers.fun.clearLayers();
   }
+}
+
+function updateLocationDisclosure() {
+  if (!locationDisclosure) return;
+  locationDisclosure.textContent = state.user && state.user.role === 'company'
+    ? t('locationDisclosureCompany')
+    : t('locationDisclosureDefault');
 }
 
 function scoreColor(score) {
@@ -775,6 +787,7 @@ function updateTranslations() {
     node.textContent = t(node.dataset.i18n);
   });
   applyUserMode();
+  updateLocationDisclosure();
   searchInput.placeholder = t('searchPlaceholder');
   languageToggle.innerHTML = state.language === 'de' ? '<span>🇩🇪</span><span>DE</span>' : '<span>🇬🇧</span><span>EN</span>';
   loginButton.textContent = state.user ? state.user.name : 'Login';
@@ -1113,13 +1126,13 @@ function renderLoginPopover() {
   }
 
   const savedCode = hasComfortConsent() ? localStorage.getItem('sicherodernicht-login-code') || '' : '';
-  const savedPin = hasComfortConsent() ? localStorage.getItem('sicherodernicht-login-pin') || '' : '';
-  const hasSavedLogin = Boolean(savedCode || savedPin);
+  localStorage.removeItem('sicherodernicht-login-pin');
+  const hasSavedLogin = Boolean(savedCode);
 
   loginPopover.innerHTML = `
     <div class="login-grid">
       <input id="loginCode" placeholder="${t('loginCode')}" autocomplete="username" value="${savedCode}" />
-      <input id="loginPin" placeholder="${t('loginPin')}" autocomplete="current-password" inputmode="text" value="${savedPin}" />
+      <input id="loginPin" placeholder="${t('loginPin')}" autocomplete="current-password" inputmode="text" />
       <label class="remember-login">
         <input id="rememberLogin" type="checkbox" ${hasSavedLogin ? 'checked' : ''} />
         <span>${t('rememberLogin')}</span>
@@ -1435,6 +1448,7 @@ function downloadCompanyCsv() {
 
 function renderAuthPanel() {
   applyUserMode();
+  updateLocationDisclosure();
   registeredPanel.classList.toggle('hidden', !(state.user && state.user.role === 'company'));
   logoutButton.classList.add('hidden');
   updateDangerButtonState();
@@ -1570,9 +1584,10 @@ function renderAuthPanel() {
 }
 
 async function api(path, options = {}) {
+  const { headers = {}, ...rest } = options;
   const response = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options
+    ...rest,
+    headers: { 'Content-Type': 'application/json', ...headers }
   });
   const contentType = response.headers.get('content-type') || '';
   const payload = contentType.includes('application/json') ? await response.json() : null;
@@ -1836,8 +1851,7 @@ async function loadMapData() {
 }
 
 async function loadTicker() {
-  const tokenPart = state.token ? `?token=${encodeURIComponent(state.token)}` : '';
-  const payload = await api(`/api/ticker${tokenPart}`);
+  const payload = await api('/api/ticker');
   state.tickerItems = payload.items || [];
   renderReportTicker();
 }
@@ -1861,11 +1875,12 @@ async function loadProfile() {
     return;
   }
   try {
-    const payload = await api(`/api/me?token=${encodeURIComponent(state.token)}`);
+    const authHeaders = { Authorization: `Bearer ${state.token}` };
+    const payload = await api('/api/me', { headers: authHeaders });
     state.user = payload.user;
     state.companyMembers = payload.companyMembers || [];
     if (state.user && state.user.role === 'company') {
-      const feed = await api(`/api/company-feed?token=${encodeURIComponent(state.token)}`).catch(() => null);
+      const feed = await api('/api/company-feed', { headers: authHeaders }).catch(() => null);
       state.companyAlerts = feed && feed.alerts ? feed.alerts : [];
     } else {
       state.companyAlerts = [];
@@ -1957,7 +1972,7 @@ async function submitLogin() {
     localStorage.removeItem('sicherodernicht-token');
     if (rememberInput && rememberInput.checked && hasComfortConsent()) {
       localStorage.setItem('sicherodernicht-login-code', code);
-      localStorage.setItem('sicherodernicht-login-pin', pin);
+      localStorage.removeItem('sicherodernicht-login-pin');
     } else {
       localStorage.removeItem('sicherodernicht-login-code');
       localStorage.removeItem('sicherodernicht-login-pin');

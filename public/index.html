@@ -15,7 +15,7 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="/styles.css?v=79" />
+    <link rel="stylesheet" href="/styles.css?v=80" />
   </head>
   <body class="design-friendly">
     <div class="shell">
@@ -52,6 +52,9 @@
               </button>
               <button id="currentAlertsBtn" class="current-alerts-button hidden" type="button">0 aktuelle Meldungen</button>
             </div>
+            <p id="locationDisclosure" class="location-disclosure">
+              Standort wird erst nach deinem Tippen abgefragt. Er wird zum Zentrieren, Anzeigen und Bewerten deiner Umgebung genutzt.
+            </p>
 
             <section class="map-panel compact-map">
               <div id="alertStrip" class="alert-strip hidden"></div>
@@ -159,7 +162,7 @@
           <strong>Datenschutz-Einstellungen</strong>
           <p>
             Wir nutzen notwendige Speicherungen fur die Funktion der App. Komfortspeicherungen merken Sprache,
-            Login-Daten und Standort-Teilen-Einstellungen nur, wenn du zustimmst.
+            Login-Code und Standort-Teilen-Einstellungen nur, wenn du zustimmst. Die PIN wird nicht gespeichert.
           </p>
         </div>
         <div class="consent-options">
@@ -186,7 +189,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="/app.js?v=95"></script>
+    <script src="/app.js?v=96"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
