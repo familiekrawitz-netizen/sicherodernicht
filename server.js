@@ -289,6 +289,7 @@ function sendJson(res, statusCode, payload) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Permissions-Policy': 'geolocation=(self)',
     'Cache-Control': 'no-store'
   });
   res.end(JSON.stringify(payload));
@@ -300,6 +301,7 @@ function sendText(res, statusCode, payload, contentType = 'text/plain; charset=u
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Permissions-Policy': 'geolocation=(self)',
     'Cache-Control': 'no-store'
   });
   res.end(payload);
@@ -308,6 +310,7 @@ function sendText(res, statusCode, payload, contentType = 'text/plain; charset=u
 function sendText(res, statusCode, text) {
   res.writeHead(statusCode, {
     'Content-Type': 'text/plain; charset=utf-8',
+    'Permissions-Policy': 'geolocation=(self)',
     'Cache-Control': 'no-store'
   });
   res.end(text);
@@ -348,6 +351,7 @@ function wantsHtml(req, url) {
 function sendTestAccessPage(res) {
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
+    'Permissions-Policy': 'geolocation=(self)',
     'Cache-Control': 'no-store'
   });
   res.end(`<!doctype html>
@@ -470,7 +474,10 @@ function serveStatic(req, res) {
       '.svg': 'image/svg+xml'
     };
 
-    res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
+    res.writeHead(200, {
+      'Content-Type': types[ext] || 'application/octet-stream',
+      'Permissions-Policy': 'geolocation=(self)'
+    });
     res.end(content);
   });
 }

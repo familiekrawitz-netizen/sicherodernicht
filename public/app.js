@@ -101,6 +101,10 @@ const texts = {
     viewToday: 'Heute',
     locateError: 'Standort konnte nicht bestimmt werden.',
     locationDeniedHint: 'iPhone liefert keinen Standort. Bitte Standort in iOS erlauben oder Karte auf den Ort schieben.',
+    locationPermissionDenied: 'Standort wurde abgelehnt. Bitte in iOS/Android Standortzugriff für den Browser erlauben.',
+    locationUnavailable: 'Standort ist gerade nicht verfügbar. Bitte WLAN/Mobilfunk aktivieren oder Karte auf den Ort schieben.',
+    locationTimeout: 'Standortabfrage dauerte zu lange. Bitte erneut versuchen oder Karte auf den Ort schieben.',
+    locationFrameHint: 'Die App scheint eingebettet zu sein. Der Rahmen muss allow="geolocation" erlauben.',
     mapCenterFallback: 'Standort nicht verfügbar. Die Kartenmitte wird als Bewertungsort verwendet.',
     secureContext: 'Geolocation braucht HTTPS oder localhost.',
     searching: 'Suche lauft...',
@@ -254,6 +258,10 @@ const texts = {
     viewToday: 'Today',
     locateError: 'Could not determine location.',
     locationDeniedHint: 'iPhone did not provide a location. Please allow location access or move the map to the place.',
+    locationPermissionDenied: 'Location was denied. Please allow location access for the browser in iOS/Android settings.',
+    locationUnavailable: 'Location is currently unavailable. Please enable Wi-Fi/mobile data or move the map to the place.',
+    locationTimeout: 'Location request timed out. Please try again or move the map to the place.',
+    locationFrameHint: 'The app seems to be embedded. The frame must allow geolocation.',
     mapCenterFallback: 'Location unavailable. The map center is used as the rating place.',
     secureContext: 'Geolocation requires HTTPS or localhost.',
     searching: 'Searching...',
@@ -655,6 +663,29 @@ function errorMessage(error) {
   return error.error || error.message || `HTTP ${error.status || '?'}`;
 }
 
+function isEmbeddedFrame() {
+  try {
+    return window.self !== window.top;
+  } catch (error) {
+    return true;
+  }
+}
+
+function geolocationErrorMessage(error) {
+  if (isEmbeddedFrame()) return t('locationFrameHint');
+  if (!error) return t('locateError');
+  if (error.code === 1) return t('locationPermissionDenied');
+  if (error.code === 2) return t('locationUnavailable');
+  if (error.code === 3) return t('locationTimeout');
+  return error.message || t('locateError');
+}
+
+function geolocationDebugMessage(prefix, error) {
+  const code = error && error.code ? error.code : '?';
+  const message = error && error.message ? error.message : geolocationErrorMessage(error);
+  return `${prefix}: Fehlercode ${code} · ${message}`;
+}
+
 function iconHtml(content, className, size = [70, 70], anchor = [35, 35]) {
   return L.divIcon({
     className,
@@ -931,8 +962,9 @@ function getCurrentPositionOnce() {
         setUserPosition(position.coords.latitude, position.coords.longitude, false);
         resolve(state.userPos);
       },
-      () => {
-        showStatus(t('locationDeniedHint'));
+      (error) => {
+        debugLog(geolocationDebugMessage('Standort einmalig', error));
+        showStatus(geolocationErrorMessage(error));
         resolve(null);
       },
       GEOLOCATION_OPTIONS
@@ -2064,36 +2096,27 @@ function locateMe() {
       centerOnUser(position.coords.latitude, position.coords.longitude);
       await loadAreaSummary();
     },
-    () => {
-      debugLog('Standort: abgelehnt oder nicht verfügbar');
-      showStatus(t('locationDeniedHint'));
+    (error) => {
+      debugLog(geolocationDebugMessage('Standort', error));
+      showStatus(geolocationErrorMessage(error));
     },
     GEOLOCATION_OPTIONS
   );
 
+  // Start continuous updates only after a user-initiated location request.
   if (watchId !== null) {
     navigator.geolocation.clearWatch(watchId);
   }
-
   watchId = navigator.geolocation.watchPosition(
     (position) => setUserPosition(position.coords.latitude, position.coords.longitude, false),
-    () => {},
+    (error) => debugLog(geolocationDebugMessage('Standort-Aktualisierung', error)),
     GEOLOCATION_WATCH_OPTIONS
   );
 }
 
 function autoLocateOnLoad() {
-  if (!navigator.geolocation) return;
-  if (!window.isSecureContext && location.hostname !== 'localhost') return;
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      setUserPosition(position.coords.latitude, position.coords.longitude, false);
-      await loadAreaSummary();
-    },
-    () => {},
-    GEOLOCATION_OPTIONS
-  );
+  // Apple recommends requesting location only when the user engages a feature that needs it.
+  debugLog('Automatische Standortabfrage beim Laden deaktiviert');
 }
 
 function activateButtonFromTouch(button) {
