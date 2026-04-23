@@ -91,6 +91,8 @@ const texts = {
     showOnMap: 'Anzeigen',
     filterActive: 'Filter aktiv',
     filterEnded: 'Filter wieder ausgeblendet',
+    filterNoResults: 'Keine passenden Meldungen in dieser Kategorie gefunden.',
+    filterNearestShown: 'Nächster passender Bereich ist sichtbar.',
     alertsTitle: 'Registrierte Nutzer',
     logout: 'Logout',
     adTitle: 'biss-berlin.com',
@@ -250,6 +252,8 @@ const texts = {
     showOnMap: 'Show',
     filterActive: 'Filter active',
     filterEnded: 'Filter hidden again',
+    filterNoResults: 'No matching reports found in this category.',
+    filterNearestShown: 'Nearest matching area is visible.',
     alertsTitle: 'Registered users',
     logout: 'Logout',
     adTitle: 'biss-berlin.com',
@@ -888,6 +892,56 @@ function currentDangerAlertsWithDistance(center) {
     .sort((a, b) => a.distance - b.distance);
 }
 
+function legendFilterPoints(data) {
+  if (!data) return [];
+  const cellPoints = (data.cells || []).map((entry) => ({
+    lat: entry.lat,
+    lng: entry.lng,
+    kind: 'cell'
+  }));
+  const alertPoints = (data.alerts || []).map((entry) => ({
+    lat: entry.lat,
+    lng: entry.lng,
+    kind: 'alert'
+  }));
+  return [...cellPoints, ...alertPoints].filter((entry) => Number.isFinite(entry.lat) && Number.isFinite(entry.lng));
+}
+
+function zoomForRadiusFrom(center, target) {
+  const mapSize = map.getSize();
+  const availablePixels = Math.max(90, Math.min(mapSize.x, mapSize.y) * 0.43);
+
+  for (let zoom = 18; zoom >= 3; zoom -= 1) {
+    const centerPoint = map.project([center.lat, center.lng], zoom);
+    const targetPoint = map.project([target.lat, target.lng], zoom);
+    if (centerPoint.distanceTo(targetPoint) <= availablePixels) {
+      return zoom;
+    }
+  }
+
+  return 3;
+}
+
+function focusLegendFilterAroundUser(data) {
+  const points = legendFilterPoints(data);
+  if (!points.length) {
+    showStatus(t('filterNoResults'));
+    return;
+  }
+
+  const currentCenter = map.getCenter();
+  const center = state.userPos || { lat: currentCenter.lat, lng: currentCenter.lng };
+  const nearest = points
+    .map((entry) => ({
+      ...entry,
+      distance: distanceMeters(center.lat, center.lng, entry.lat, entry.lng)
+    }))
+    .sort((a, b) => a.distance - b.distance)[0];
+  const zoom = Math.min(18, Math.max(3, zoomForRadiusFrom(center, nearest)));
+  map.setView([center.lat, center.lng], zoom, { animate: true });
+  showStatus(`${t('filterNearestShown')} ${formatDistance(nearest.distance)}`);
+}
+
 function companyDangerBounds(center) {
   const latDelta = COMPANY_DANGER_RADIUS_METERS / 111320;
   const lngDelta = COMPANY_DANGER_RADIUS_METERS / (111320 * Math.max(Math.cos((center.lat * Math.PI) / 180), 0.2));
@@ -1292,6 +1346,7 @@ async function startLegendFilter(score) {
   showStatus(`${t('filterActive')}: ${score === 6 ? t('tickerScores.6') : t(`scores.${score}`)}`);
   renderLegend();
   renderMap();
+  focusLegendFilterAroundUser(data);
 
   state.legendFilter.timerId = setInterval(() => {
     if (!state.legendFilter || state.legendFilter.score !== score) return;
