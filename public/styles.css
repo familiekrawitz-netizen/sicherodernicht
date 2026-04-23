@@ -902,17 +902,50 @@ button:disabled:active,
   cursor: wait;
 }
 
-.sent-bird {
-  position: fixed;
-  left: var(--bird-start-x, 50vw);
-  top: var(--bird-start-y, 50vh);
-  z-index: 3600;
-  font-size: clamp(2.7rem, 8vw, 4.4rem);
+.score-button.is-sending::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), transparent 62%);
+  transform-origin: left center;
+  animation: ratingSendTimer 2.5s linear forwards;
   pointer-events: none;
-  animation: sentBirdFly 3.55s cubic-bezier(0.16, 0.76, 0.22, 1) forwards;
+}
+
+.sent-pigeon {
+  position: fixed;
+  left: var(--pigeon-start-x, 50vw);
+  top: var(--pigeon-start-y, 50vh);
+  z-index: 3600;
+  width: clamp(72px, 16vw, 118px);
+  height: clamp(72px, 16vw, 118px);
+  pointer-events: none;
+  animation: sentPigeonLoop 4.05s cubic-bezier(0.18, 0.78, 0.22, 1) forwards;
   filter: drop-shadow(0 12px 16px rgba(15, 23, 42, 0.32));
   transform: translate(-50%, -50%);
   will-change: transform, opacity;
+}
+
+.pigeon-body {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(3.4rem, 12vw, 5.6rem);
+  animation: pigeonWingWiggle 0.42s ease-in-out infinite;
+}
+
+.pigeon-note {
+  position: absolute;
+  right: 9%;
+  bottom: 18%;
+  width: 18%;
+  height: 13%;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #fff7ed, #bae6fd);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  transform: rotate(-12deg);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
 }
 
 .danger-row {
@@ -2727,30 +2760,48 @@ body.design-friendly .partner-ad-copy strong::before {
   }
 }
 
-@keyframes sentBirdFly {
+@keyframes sentPigeonLoop {
   0% {
-    transform: translate(-50%, -50%) scale(0.58) rotate(-10deg);
+    transform: translate(-50%, -50%) scale(0.64) rotate(-12deg);
     opacity: 0;
   }
   10% {
     opacity: 1;
-    transform: translate(-46%, -78%) scale(1.05) rotate(-4deg);
+    transform: translate(calc(var(--pigeon-loop-x) * 0.34), calc(var(--pigeon-loop-y) * -0.72)) scale(1.05) rotate(-4deg);
   }
-  34% {
+  28% {
     opacity: 1;
-    transform: translate(calc(var(--bird-flight-x) * 0.22), calc(var(--bird-flight-y) * 0.28)) scale(1.14) rotate(7deg);
+    transform: translate(calc(var(--pigeon-loop-x) * 0.98), calc(var(--pigeon-loop-y) * -1.02)) scale(1.16) rotate(16deg);
   }
-  68% {
+  45% {
+    opacity: 1;
+    transform: translate(calc(var(--pigeon-loop-x) * 0.38), calc(var(--pigeon-loop-y) * -1.28)) scale(1.08) rotate(196deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(calc(var(--pigeon-loop-x) * -0.18), calc(var(--pigeon-loop-y) * -0.52)) scale(1) rotate(330deg);
+  }
+  78% {
     opacity: 0.96;
-    transform: translate(calc(var(--bird-flight-x) * 0.62), calc(var(--bird-flight-y) * 0.72)) scale(1.02) rotate(17deg);
+    transform: translate(calc(var(--pigeon-flight-x) * 0.54), calc(var(--pigeon-loop-y) * -1.18)) scale(0.92) rotate(18deg);
   }
-  88% {
+  92% {
     opacity: 0.9;
-    transform: translate(calc(var(--bird-flight-x) * 0.9), calc(var(--bird-flight-y) * 0.94)) scale(0.86) rotate(25deg);
+    transform: translate(calc(var(--pigeon-flight-x) * 0.84), calc(var(--pigeon-loop-y) * -1.52)) scale(0.78) rotate(22deg);
   }
   100% {
-    transform: translate(var(--bird-flight-x), var(--bird-flight-y)) scale(0.68) rotate(32deg);
+    transform: translate(var(--pigeon-flight-x), calc(var(--pigeon-loop-y) * -1.78)) scale(0.56) rotate(26deg);
     opacity: 0;
+  }
+}
+
+@keyframes pigeonWingWiggle {
+  0%,
+  100% {
+    transform: rotate(-2deg) scale(1);
+  }
+  50% {
+    transform: rotate(4deg) scale(1.06);
   }
 }
 
@@ -2771,6 +2822,17 @@ body.design-friendly .partner-ad-copy strong::before {
   100% {
     opacity: 0;
     transform: translate(-50%, 14px) scale(0.94) rotate(1deg);
+  }
+}
+
+@keyframes ratingSendTimer {
+  0% {
+    transform: scaleX(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scaleX(0);
+    opacity: 0;
   }
 }
 
@@ -2871,7 +2933,7 @@ body.design-friendly .partner-ad-copy strong::before {
   }
 }
 
-@keyframes sentBirdReduced {
+@keyframes sentPigeonReduced {
   0% {
     transform: translate(-50%, -50%) scale(0.82);
     opacity: 0;
@@ -2928,6 +2990,7 @@ body.design-friendly .partner-ad-copy strong::before {
   .rating-cloud-visual,
   .rating-cloud-visual::before,
   .rating-cloud-visual::after,
+  .score-button.is-sending::before,
   .cell-excellent,
   .cell-danger,
   .fun-badge,
@@ -2946,8 +3009,12 @@ body.design-friendly .partner-ad-copy strong::before {
     transform: none !important;
   }
 
-  .sent-bird {
-    animation: sentBirdReduced 1.25s ease-out forwards !important;
+  .sent-pigeon {
+    animation: sentPigeonReduced 1.25s ease-out forwards !important;
+  }
+
+  .pigeon-body {
+    animation: none !important;
   }
 
   .sent-toast.is-visible {

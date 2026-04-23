@@ -693,7 +693,7 @@ function showSentToast(message) {
   }, 2000);
 }
 
-function showSentBird(button, message = 'Meldung gesendet') {
+function showSentPigeon(button, message = 'Meldung gesendet') {
   if (!button) {
     showStatus(message);
     showSentToast(message);
@@ -702,21 +702,33 @@ function showSentBird(button, message = 'Meldung gesendet') {
   const rect = button.getBoundingClientRect();
   const startX = rect.left + rect.width * 0.52;
   const startY = rect.top + rect.height * 0.45;
-  const flightX = Math.max(180, window.innerWidth - startX + 120);
-  const flightY = -Math.max(120, startY * 0.34 + 90);
-  const bird = document.createElement('span');
-  bird.className = 'sent-bird';
-  bird.style.setProperty('--bird-start-x', `${startX}px`);
-  bird.style.setProperty('--bird-start-y', `${startY}px`);
-  bird.style.setProperty('--bird-flight-x', `${flightX}px`);
-  bird.style.setProperty('--bird-flight-y', `${flightY}px`);
-  bird.textContent = '🐦';
-  document.body.appendChild(bird);
+  const safeEndX = window.innerWidth + 120;
+  const flightX = Math.max(240, safeEndX - startX);
+  const loopX = Math.min(130, Math.max(76, window.innerWidth * 0.18));
+  const loopY = Math.min(118, Math.max(76, window.innerHeight * 0.16));
+  const pigeon = document.createElement('span');
+  pigeon.className = 'sent-pigeon';
+  pigeon.style.setProperty('--pigeon-start-x', `${startX}px`);
+  pigeon.style.setProperty('--pigeon-start-y', `${startY}px`);
+  pigeon.style.setProperty('--pigeon-loop-x', `${loopX}px`);
+  pigeon.style.setProperty('--pigeon-loop-y', `${loopY}px`);
+  pigeon.style.setProperty('--pigeon-flight-x', `${flightX}px`);
+  pigeon.innerHTML = '<span class="pigeon-body" aria-hidden="true">🕊️</span><span class="pigeon-note" aria-hidden="true"></span>';
+  document.body.appendChild(pigeon);
   showStatus(message);
   showSentToast(message);
   window.setTimeout(() => {
-    bird.remove();
-  }, 3800);
+    pigeon.remove();
+  }, 4300);
+}
+
+function showRatingSentFeedback(button, message = 'Meldung gesendet') {
+  if (state.user && state.user.role === 'company') {
+    showStatus(message);
+    showSentToast(message);
+    return;
+  }
+  showSentPigeon(button, message);
 }
 
 function debugLog(message) {
@@ -1929,7 +1941,7 @@ async function submitRating(score) {
       body: JSON.stringify({ lat: state.userPos.lat, lng: state.userPos.lng, score })
     });
     debugLog(`Bewertung ${score}: gespeichert`);
-    showSentBird(ratingButtonForScore(score), 'Meldung gesendet');
+    showRatingSentFeedback(ratingButtonForScore(score), 'Meldung gesendet');
     await Promise.all([loadMapData(), loadAreaSummary()]);
     await loadTicker();
   } catch (error) {
