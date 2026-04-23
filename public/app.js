@@ -1012,7 +1012,7 @@ async function ensureUserPosition() {
     return position;
   }
   const center = map.getCenter();
-  setUserPosition(center.lat, center.lng, false, false);
+  setUserPosition(center.lat, center.lng, false, false, false);
   debugLog(`Standort-Fallback: Kartenmitte ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}`);
   showStatus(t('mapCenterFallback'));
   await loadAreaSummary();
@@ -1568,15 +1568,17 @@ async function api(path, options = {}) {
   return payload;
 }
 
-function setUserPosition(lat, lng, announce = true, shareLocation = true) {
+function setUserPosition(lat, lng, announce = true, shareLocation = true, showMarker = true) {
   state.userPos = { lat, lng };
 
-  if (!userMarker) {
-    userMarker = L.marker([lat, lng], {
-      icon: iconHtml('<div class="user-badge-marker">📍</div>', 'user-marker', [46, 46], [23, 23])
-    }).addTo(layers.people);
-  } else {
-    userMarker.setLatLng([lat, lng]);
+  if (showMarker) {
+    if (!userMarker) {
+      userMarker = L.marker([lat, lng], {
+        icon: iconHtml('<div class="user-badge-marker">📍</div>', 'user-marker', [46, 46], [23, 23])
+      }).addTo(layers.people);
+    } else {
+      userMarker.setLatLng([lat, lng]);
+    }
   }
 
   if (announce) {
