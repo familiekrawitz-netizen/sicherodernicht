@@ -363,6 +363,8 @@ const scoreDefinitions = [1, 2, 3, 4, 5];
 const funTags = ['first_kiss', 'sport_success', 'best_recovery', 'kind_people', 'interesting_area'];
 const companyAlertTypes = ['gun', 'knife', 'violence', 'mob'];
 const COMPANY_DANGER_RADIUS_METERS = 50000;
+const GEOLOCATION_OPTIONS = { enableHighAccuracy: false, maximumAge: 120000, timeout: 30000 };
+const GEOLOCATION_WATCH_OPTIONS = { enableHighAccuracy: false, maximumAge: 120000, timeout: 30000 };
 const funIcons = {
   first_kiss: '💋',
   sport_success: '🏆',
@@ -647,6 +649,12 @@ function debugLog(message) {
   debugStatus.classList.remove('hidden');
 }
 
+function errorMessage(error) {
+  if (!error) return 'Unbekannter Fehler';
+  if (typeof error === 'string') return error;
+  return error.error || error.message || `HTTP ${error.status || '?'}`;
+}
+
 function iconHtml(content, className, size = [70, 70], anchor = [35, 35]) {
   return L.divIcon({
     className,
@@ -927,7 +935,7 @@ function getCurrentPositionOnce() {
         showStatus(t('locationDeniedHint'));
         resolve(null);
       },
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      GEOLOCATION_OPTIONS
     );
   });
 }
@@ -1453,7 +1461,13 @@ async function api(path, options = {}) {
   const contentType = response.headers.get('content-type') || '';
   const payload = contentType.includes('application/json') ? await response.json() : null;
   if (!response.ok) {
-    throw payload || new Error(`HTTP ${response.status}`);
+    if (payload && typeof payload === 'object') {
+      payload.status = response.status;
+      throw payload;
+    }
+    const error = new Error(`HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   return payload;
 }
@@ -1775,8 +1789,9 @@ async function submitRating(score) {
     await Promise.all([loadMapData(), loadAreaSummary()]);
     await loadTicker();
   } catch (error) {
-    debugLog(`Bewertung ${score}: Fehler ${error && error.message ? error.message : 'unbekannt'}`);
-    showStatus(error.retryAfterMinutes ? t('ratingBlocked') : t('ratingBlocked'));
+    const message = errorMessage(error);
+    debugLog(`Bewertung ${score}: Fehler ${message}`);
+    showStatus(error && error.retryAfterMinutes ? t('ratingBlocked') : message);
   }
 }
 
@@ -2041,7 +2056,7 @@ function locateMe() {
     return;
   }
 
-  debugLog('Standort: Browser-Abfrage startet');
+  debugLog('Standort: Browser-Abfrage startet mit iOS-freundlicher Genauigkeit');
   navigator.geolocation.getCurrentPosition(
     async (position) => {
       debugLog(`Standort erhalten: ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`);
@@ -2053,7 +2068,7 @@ function locateMe() {
       debugLog('Standort: abgelehnt oder nicht verfügbar');
       showStatus(t('locationDeniedHint'));
     },
-    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    GEOLOCATION_OPTIONS
   );
 
   if (watchId !== null) {
@@ -2063,7 +2078,7 @@ function locateMe() {
   watchId = navigator.geolocation.watchPosition(
     (position) => setUserPosition(position.coords.latitude, position.coords.longitude, false),
     () => {},
-    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    GEOLOCATION_WATCH_OPTIONS
   );
 }
 
@@ -2077,7 +2092,7 @@ function autoLocateOnLoad() {
       await loadAreaSummary();
     },
     () => {},
-    { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
+    GEOLOCATION_OPTIONS
   );
 }
 
