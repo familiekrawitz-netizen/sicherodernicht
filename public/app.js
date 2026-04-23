@@ -47,6 +47,7 @@ const state = {
   legendFilter: null,
   currentAlertIndex: -1,
   companyDangerView: false,
+  ratingLocks: {},
   shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('sicherodernicht-share-company-location') !== 'off' : true
 };
 
@@ -650,6 +651,17 @@ function showStatus(message) {
   submitStatus.textContent = message;
 }
 
+function showSentBird(button, message = 'Meldung gesendet') {
+  const bird = document.createElement('span');
+  bird.className = 'sent-bird';
+  bird.textContent = '🐦';
+  button.appendChild(bird);
+  showStatus(message);
+  window.setTimeout(() => {
+    bird.remove();
+  }, 1100);
+}
+
 function debugLog(message) {
   if (!debugStatus) return;
   const stamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1138,6 +1150,40 @@ function renderRatingButtons() {
     button.addEventListener('click', () => submitRating(score));
     ratingButtons.appendChild(button);
   });
+}
+
+function ratingButtonForScore(score) {
+  return ratingButtons.querySelector(`[data-score="${score}"]`) || document.querySelector(`[data-company-score="${score}"]`);
+}
+
+function setRatingButtonLocked(score, locked) {
+  const button = ratingButtonForScore(score);
+  if (!button) return;
+  button.classList.toggle('is-sending', locked);
+  button.disabled = locked;
+}
+
+function lockRatingScore(score) {
+  const now = Date.now();
+  if (state.ratingLocks[score] && state.ratingLocks[score] > now) {
+    debugLog(`Bewertung ${score}: Doppel-Tap lokal geblockt`);
+    showStatus('Meldung wird bereits gesendet');
+    return false;
+  }
+  state.ratingLocks[score] = now + 2500;
+  setRatingButtonLocked(score, true);
+  window.setTimeout(() => {
+    if (state.ratingLocks[score] <= Date.now()) {
+      delete state.ratingLocks[score];
+      setRatingButtonLocked(score, false);
+    }
+  }, 2500);
+  return true;
+}
+
+function unlockRatingScore(score) {
+  delete state.ratingLocks[score];
+  setRatingButtonLocked(score, false);
 }
 
 function stopLegendFilter(announce = false) {
@@ -1801,10 +1847,12 @@ async function loadProfile() {
 
 async function submitRating(score) {
   debugLog(`Bewertung ${score} gedrückt`);
+  if (!lockRatingScore(score)) return;
   if (!state.userPos) {
     debugLog(`Bewertung ${score}: Standort fehlt, frage Standort an`);
     const position = await ensureUserPosition();
     if (!position) {
+      unlockRatingScore(score);
       debugLog(`Bewertung ${score}: kein Standort erhalten`);
       showStatus(t('selectLocationFirst'));
       return;
@@ -1817,10 +1865,11 @@ async function submitRating(score) {
       body: JSON.stringify({ lat: state.userPos.lat, lng: state.userPos.lng, score })
     });
     debugLog(`Bewertung ${score}: gespeichert`);
-    showStatus(`${t('ratingSaved')} ${score}/5`);
+    showSentBird(ratingButtonForScore(score), 'Meldung gesendet');
     await Promise.all([loadMapData(), loadAreaSummary()]);
     await loadTicker();
   } catch (error) {
+    unlockRatingScore(score);
     const message = errorMessage(error);
     debugLog(`Bewertung ${score}: Fehler ${message}`);
     showStatus(error && error.retryAfterMinutes ? t('ratingBlocked') : message);
