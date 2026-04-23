@@ -1389,8 +1389,6 @@ function renderAreaSummary() {
     return;
   }
 
-  const yearScore = state.areaData.year.averageScore == null ? t('noData') : state.areaData.year.averageScore;
-  const todayScore = state.areaData.today.averageScore == null ? t('noData') : state.areaData.today.averageScore;
   const excellent = state.areaData.nearestExcellent
     ? `${Math.round(distanceMeters(state.userPos.lat, state.userPos.lng, state.areaData.nearestExcellent.lat, state.areaData.nearestExcellent.lng))} m`
     : t('noData');
@@ -1402,8 +1400,6 @@ function renderAreaSummary() {
     : t('noData');
 
   areaSummary.innerHTML = `
-    <div class="summary-box"><strong>${t('yearSummary')}</strong><br>${yearScore}</div>
-    <div class="summary-box"><strong>${t('todaySummary')}</strong><br>${todayScore}</div>
     <div class="summary-box"><strong>${t('nearestExcellent')}</strong><br>${excellent}</div>
     <div class="summary-box"><strong>${t('nearestPolice')}</strong><br>${police}</div>
     <div class="summary-box"><strong>${t('nearestHospital')}</strong><br>${hospital}</div>
