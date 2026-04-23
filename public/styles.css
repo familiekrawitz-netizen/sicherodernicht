@@ -977,6 +977,20 @@ button:disabled:active,
   color: #d9e7ff;
 }
 
+.location-help {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(254, 243, 199, 0.94));
+  color: #3b2f09;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 14px 34px rgba(120, 53, 15, 0.14);
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
 .sent-toast {
   position: fixed;
   left: 50%;

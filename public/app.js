@@ -102,7 +102,7 @@ const texts = {
     viewToday: 'Heute',
     locateError: 'Standort konnte nicht bestimmt werden.',
     locationDeniedHint: 'iPhone liefert keinen Standort. Bitte Standort in iOS erlauben oder Karte auf den Ort schieben.',
-    locationPermissionDenied: 'Standort wurde abgelehnt. Bitte in iOS/Android Standortzugriff für den Browser erlauben.',
+    locationPermissionDenied: 'Grund: Die Standortfreigabe wurde verweigert. iPhone: Einstellungen > Datenschutz & Sicherheit > Ortungsdienste > Safari-Websites/Chrome erlauben. Android: Browser-Einstellungen > Website-Einstellungen > Standort erlauben. Danach die Seite neu laden und erneut "Mein Standort" drücken. Du kannst auch die Karte auf den Ort schieben; dann nutzen wir die Kartenmitte.',
     locationUnavailable: 'Standort ist gerade nicht verfügbar. Bitte WLAN/Mobilfunk aktivieren oder Karte auf den Ort schieben.',
     locationTimeout: 'Standortabfrage dauerte zu lange. Bitte erneut versuchen oder Karte auf den Ort schieben.',
     locationFrameHint: 'Die App scheint eingebettet zu sein. Der Rahmen muss allow="geolocation" erlauben.',
@@ -259,7 +259,7 @@ const texts = {
     viewToday: 'Today',
     locateError: 'Could not determine location.',
     locationDeniedHint: 'iPhone did not provide a location. Please allow location access or move the map to the place.',
-    locationPermissionDenied: 'Location was denied. Please allow location access for the browser in iOS/Android settings.',
+    locationPermissionDenied: 'Reason: Location access was denied. iPhone: Settings > Privacy & Security > Location Services > allow Safari Websites/Chrome. Android: browser settings > site settings > allow location. Then reload the page and tap "My location" again. You can also move the map to the place; then we use the map center.',
     locationUnavailable: 'Location is currently unavailable. Please enable Wi-Fi/mobile data or move the map to the place.',
     locationTimeout: 'Location request timed out. Please try again or move the map to the place.',
     locationFrameHint: 'The app seems to be embedded. The frame must allow geolocation.',
@@ -429,6 +429,7 @@ const mainDangerBtn = document.getElementById('mainDangerBtn');
 const funToggle = document.getElementById('funToggle');
 const viewSwitcher = document.getElementById('viewSwitcher');
 const submitStatus = document.getElementById('submitStatus');
+const locationHelp = document.getElementById('locationHelp');
 const sentToast = document.getElementById('sentToast');
 const debugStatus = document.getElementById('debugStatus');
 const searchForm = document.getElementById('searchForm');
@@ -650,6 +651,23 @@ function escapeHtml(value) {
 
 function showStatus(message) {
   submitStatus.textContent = message;
+}
+
+function showLocationHelp(message) {
+  if (!locationHelp) return;
+  locationHelp.textContent = message;
+  locationHelp.classList.remove('hidden');
+}
+
+function hideLocationHelp() {
+  if (!locationHelp) return;
+  locationHelp.classList.add('hidden');
+}
+
+function showLocationProblem(message) {
+  const shortMessage = message.length > 110 ? `${message.split('.')[0]}.` : message;
+  showStatus(shortMessage);
+  showLocationHelp(message);
 }
 
 function showSentToast(message) {
@@ -978,23 +996,25 @@ function focusNextCurrentAlert() {
 function getCurrentPositionOnce() {
   if (state.userPos) return Promise.resolve(state.userPos);
   if (!navigator.geolocation) {
-    showStatus(t('locateError'));
+    showLocationProblem(t('locateError'));
     return Promise.resolve(null);
   }
   if (!window.isSecureContext && location.hostname !== 'localhost') {
-    showStatus(t('secureContext'));
+    showLocationProblem(t('secureContext'));
     return Promise.resolve(null);
   }
 
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        hideLocationHelp();
         setUserPosition(position.coords.latitude, position.coords.longitude, false);
         resolve(state.userPos);
       },
       (error) => {
+        const message = geolocationErrorMessage(error);
         debugLog(geolocationDebugMessage('Standort einmalig', error));
-        showStatus(geolocationErrorMessage(error));
+        showLocationProblem(message);
         resolve(null);
       },
       GEOLOCATION_OPTIONS
@@ -2148,26 +2168,28 @@ function locateMe() {
   debugLog('Mein Standort gedrückt');
   if (!navigator.geolocation) {
     debugLog('Standort: Geolocation nicht verfügbar');
-    showStatus(t('locateError'));
+    showLocationProblem(t('locateError'));
     return;
   }
   if (!window.isSecureContext && location.hostname !== 'localhost') {
     debugLog('Standort: kein sicherer Kontext');
-    showStatus(t('secureContext'));
+    showLocationProblem(t('secureContext'));
     return;
   }
 
   debugLog('Standort: Browser-Abfrage startet mit iOS-freundlicher Genauigkeit');
   navigator.geolocation.getCurrentPosition(
     async (position) => {
+      hideLocationHelp();
       debugLog(`Standort erhalten: ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`);
       setUserPosition(position.coords.latitude, position.coords.longitude);
       centerOnUser(position.coords.latitude, position.coords.longitude);
       await loadAreaSummary();
     },
     (error) => {
+      const message = geolocationErrorMessage(error);
       debugLog(geolocationDebugMessage('Standort', error));
-      showStatus(geolocationErrorMessage(error));
+      showLocationProblem(message);
     },
     GEOLOCATION_OPTIONS
   );
