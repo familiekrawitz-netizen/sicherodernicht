@@ -429,6 +429,7 @@ let userMarker = null;
 let watchId = null;
 let latestAlertId = '';
 let pollTimer = null;
+const debugMode = new URLSearchParams(window.location.search).get('debug') === '1';
 
 const languageToggle = document.getElementById('languageToggle');
 const loginButton = document.getElementById('loginButton');
@@ -740,6 +741,10 @@ function showRatingSentFeedback(button, message = 'Meldung gesendet') {
 }
 
 function debugLog(message) {
+  if (!debugMode) {
+    console.debug(`[sicherodernicht] ${message}`);
+    return;
+  }
   if (!debugStatus) return;
   const stamp = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   debugStatus.textContent = `${stamp} · ${message}`;
