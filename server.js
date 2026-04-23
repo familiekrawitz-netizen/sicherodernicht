@@ -575,6 +575,10 @@ function getBearerToken(req) {
   return match ? match[1].trim() : '';
 }
 
+function requestToken(req, url) {
+  return getBearerToken(req) || url.searchParams.get('token') || '';
+}
+
 function findAdminByToken(store, token) {
   if (!token) return null;
   const session = (store.adminSessions || []).find((entry) => entry.token === token);
@@ -1499,7 +1503,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/me' && req.method === 'GET') {
-    const token = getBearerToken(req);
+    const token = requestToken(req, url);
     const auth = findUserByToken(store, token);
     if (!auth) {
       sendJson(res, 401, { error: 'Nicht angemeldet' });
@@ -1632,7 +1636,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/company-feed' && req.method === 'GET') {
-    const token = getBearerToken(req);
+    const token = requestToken(req, url);
     const auth = findUserByToken(store, token);
     if (!auth) {
       sendJson(res, 401, { error: 'Nicht angemeldet' });
