@@ -777,12 +777,14 @@ button:disabled:active,
   position: relative;
   isolation: isolate;
   width: 100%;
-  min-height: 58px;
+  min-height: 66px;
   justify-content: center;
-  padding: 12px 18px;
+  padding: 13px 18px;
   overflow: hidden;
   border-color: rgba(34, 197, 94, 0.34);
   background:
+    radial-gradient(circle at 18% 20%, rgba(125, 211, 252, 0.42), transparent 34%),
+    radial-gradient(circle at 85% 84%, rgba(45, 212, 191, 0.32), transparent 34%),
     linear-gradient(135deg, rgba(241, 253, 249, 0.98), rgba(232, 242, 255, 0.94)),
     linear-gradient(135deg, rgba(20, 184, 166, 0.42), rgba(59, 130, 246, 0.3));
   color: #0f2a3f;
@@ -795,14 +797,57 @@ button:disabled:active,
 }
 
 .security-link-text {
-  display: inline-block;
-  background: linear-gradient(270deg, #0f766e 0%, #1d4ed8 32%, #0f2a3f 52%, #0f766e 74%, #1d4ed8 100%);
-  background-size: 260% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: securityTextFlow 7s linear infinite;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
   pointer-events: none;
+}
+
+.security-laser-text,
+.security-blink-text {
+  display: block;
+}
+
+.security-laser-text {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #0f2a3f;
+  text-shadow: 0 0 14px rgba(45, 212, 191, 0.18);
+}
+
+.security-laser-text::before {
+  content: attr(data-laser);
+  position: absolute;
+  inset: 0;
+  width: 0;
+  overflow: hidden;
+  color: #079669;
+  text-shadow: 0 0 6px rgba(20, 184, 166, 0.82), 0 0 18px rgba(14, 165, 233, 0.5);
+  animation: securityLaserEngrave 6.2s steps(28, end) infinite;
+}
+
+.security-laser-text::after {
+  content: "";
+  position: absolute;
+  top: -0.15em;
+  bottom: -0.15em;
+  left: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, #22d3ee, #34d399, transparent);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.92), 0 0 20px rgba(52, 211, 153, 0.62);
+  animation: securityLaserCursor 6.2s steps(28, end) infinite;
+}
+
+.security-blink-text {
+  color: #164e63;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.01em;
+  animation: securityInfoBlink 6.2s ease-in-out infinite;
 }
 
 .security-link-button::after {
@@ -3032,6 +3077,64 @@ body.design-friendly .partner-ad-copy strong::before {
   }
 }
 
+@keyframes securityLaserEngrave {
+  0%,
+  12% {
+    width: 0;
+    opacity: 0.2;
+  }
+  46%,
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes securityLaserCursor {
+  0%,
+  12% {
+    left: 0;
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  46% {
+    left: calc(100% - 2px);
+    opacity: 1;
+  }
+  54%,
+  100% {
+    left: calc(100% - 2px);
+    opacity: 0;
+  }
+}
+
+@keyframes securityInfoBlink {
+  0%,
+  48% {
+    opacity: 0.32;
+    filter: saturate(0.85);
+    transform: translateY(1px);
+  }
+  56%,
+  68%,
+  82% {
+    opacity: 1;
+    filter: saturate(1.2);
+    text-shadow: 0 0 12px rgba(14, 165, 233, 0.28);
+    transform: translateY(0);
+  }
+  62%,
+  75% {
+    opacity: 0.58;
+    filter: saturate(0.95);
+  }
+  100% {
+    opacity: 0.78;
+  }
+}
+
 @keyframes securityTextFlow {
   0% {
     background-position: 100% 50%;
@@ -3165,6 +3268,9 @@ body.design-friendly .partner-ad-copy strong::before {
   .security-link-button,
   .security-link-button::before,
   .security-link-text,
+  .security-laser-text::before,
+  .security-laser-text::after,
+  .security-blink-text,
   .report-ticker-track,
   .company-feed-marquee,
   .company-ticker-track,

@@ -80,6 +80,8 @@ const texts = {
     emergencyInfo: 'Nur für registrierte Firmennutzer',
     emergencyCall: 'Bei akuter Gefahr 110 anrufen',
     needSecurity: 'Ich brauche mehr Sicherheit! Für Informationen zu unseren Partnern und Hilfsangeboten hier klicken!',
+    needSecurityLead: 'Ich brauche mehr Sicherheit!',
+    needSecurityMore: 'Für Informationen zu unseren Partnern und Hilfsangeboten hier klicken!',
     orientation: 'Aktuelle Meldungen',
     currentReports: 'Aktuelle Meldungen',
     currentAlertSingular: 'aktuelle Meldung',
@@ -241,6 +243,8 @@ const texts = {
     emergencyInfo: 'Company accounts only',
     emergencyCall: 'In immediate danger: 110',
     needSecurity: 'I need more safety! Click here for information about our partners and support offers!',
+    needSecurityLead: 'I need more safety!',
+    needSecurityMore: 'Click here for information about our partners and support offers!',
     orientation: 'Current reports',
     currentReports: 'Current reports',
     currentAlertSingular: 'current report',
@@ -822,11 +826,19 @@ function updateTranslations() {
   renderFunButtons();
   updateFunToggleState();
   updateDangerButtonState();
+  updateSecurityInviteState();
   renderLoginPopover();
   renderAuthPanel();
   renderReportTicker();
   renderCompanyTicker();
   renderAreaSummary();
+}
+
+function updateSecurityInviteState() {
+  const laserText = document.querySelector('.security-laser-text');
+  if (laserText) {
+    laserText.dataset.laser = laserText.textContent.trim();
+  }
 }
 
 function updateFunToggleState() {
