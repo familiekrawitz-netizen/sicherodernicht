@@ -81,7 +81,7 @@ const texts = {
     emergencyCall: 'Bei akuter Gefahr 110 anrufen',
     needSecurity: 'Ich brauche mehr Sicherheit! Für Informationen zu unseren Partnern und Hilfsangeboten hier klicken!',
     needSecurityLead: 'Ich brauche mehr Sicherheit!',
-    needSecurityMore: 'Für Informationen zu unseren Partnern und Hilfsangeboten hier klicken!',
+    needSecurityMore: 'Partner und Hilfsangebote öffnen',
     orientation: 'Aktuelle Meldungen',
     currentReports: 'Aktuelle Meldungen',
     currentAlertSingular: 'aktuelle Meldung',
@@ -244,7 +244,7 @@ const texts = {
     emergencyCall: 'In immediate danger: 110',
     needSecurity: 'I need more safety! Click here for information about our partners and support offers!',
     needSecurityLead: 'I need more safety!',
-    needSecurityMore: 'Click here for information about our partners and support offers!',
+    needSecurityMore: 'Open partners and support offers',
     orientation: 'Current reports',
     currentReports: 'Current reports',
     currentAlertSingular: 'current report',
@@ -835,9 +835,9 @@ function updateTranslations() {
 }
 
 function updateSecurityInviteState() {
-  const laserText = document.querySelector('.security-laser-text');
-  if (laserText) {
-    laserText.dataset.laser = laserText.textContent.trim();
+  const scanTitle = document.querySelector('.security-scan-title');
+  if (scanTitle) {
+    scanTitle.dataset.scan = scanTitle.textContent.trim();
   }
 }
 
