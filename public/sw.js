@@ -1,5 +1,5 @@
-const CACHE_NAME = 'sicherodernicht-v82';
-const APP_SHELL = ['/', '/index.html', '/sicherheit.html', '/styles.css?v=87', '/app.js?v=103', '/manifest.json?v=48', '/assets/biss-logo.svg'];
+const CACHE_NAME = 'sicherodernicht-v83';
+const APP_SHELL = ['/', '/index.html', '/sicherheit.html', '/styles.css?v=88', '/app.js?v=103', '/manifest.json?v=48', '/assets/biss-logo.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
