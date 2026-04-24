@@ -2694,9 +2694,9 @@ body.design-friendly .partner-ad-copy strong::before {
   align-items: center;
   overflow: hidden;
   background:
-    radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 28%),
-    radial-gradient(circle at left bottom, rgba(16, 185, 129, 0.16), transparent 30%),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.84), rgba(13, 40, 61, 0.72));
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.24), transparent 28%),
+    radial-gradient(circle at left bottom, rgba(16, 185, 129, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(244, 249, 255, 0.96), rgba(229, 242, 250, 0.94));
 }
 
 .safety-directory-copy p:last-child {
@@ -2717,9 +2717,9 @@ body.design-friendly .partner-ad-copy strong::before {
   min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(186, 230, 253, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2f4ff;
+  border: 1px solid rgba(125, 211, 252, 0.24);
+  background: rgba(255, 255, 255, 0.66);
+  color: #164e63;
   font-size: 0.82rem;
   font-weight: 800;
 }
@@ -2734,11 +2734,11 @@ body.design-friendly .partner-ad-copy strong::before {
   width: min(100%, 320px);
   aspect-ratio: 1;
   border-radius: 36px;
-  border: 1px solid rgba(186, 230, 253, 0.18);
+  border: 1px solid rgba(125, 211, 252, 0.26);
   background:
-    radial-gradient(circle at center, rgba(56, 189, 248, 0.2), transparent 42%),
-    linear-gradient(135deg, rgba(8, 15, 30, 0.9), rgba(14, 40, 62, 0.78));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 28px 60px rgba(2, 6, 23, 0.32);
+    radial-gradient(circle at center, rgba(56, 189, 248, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(225, 240, 249, 0.94));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4), 0 24px 46px rgba(125, 211, 252, 0.18);
 }
 
 .safety-orbit-card::before,
@@ -2747,7 +2747,7 @@ body.design-friendly .partner-ad-copy strong::before {
   position: absolute;
   inset: 12% 12%;
   border-radius: 50%;
-  border: 1px dashed rgba(186, 230, 253, 0.16);
+  border: 1px dashed rgba(14, 116, 144, 0.18);
 }
 
 .safety-orbit-card::after {
@@ -2777,9 +2777,9 @@ body.design-friendly .partner-ad-copy strong::before {
   min-width: 86px;
   height: 42px;
   padding: 0 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(186, 230, 253, 0.16);
-  color: #e2f4ff;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  color: #164e63;
   backdrop-filter: blur(12px);
 }
 
@@ -2808,14 +2808,16 @@ body.design-friendly .partner-ad-copy strong::before {
 .safety-highlight-card {
   min-height: 100%;
   background:
-    linear-gradient(140deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04)),
-    rgba(8, 15, 30, 0.44);
+    linear-gradient(140deg, rgba(255, 255, 255, 0.92), rgba(243, 249, 252, 0.92)),
+    rgba(255, 255, 255, 0.88);
+  border-color: rgba(125, 211, 252, 0.18);
+  box-shadow: 0 18px 32px rgba(148, 163, 184, 0.12);
 }
 
 .safety-highlight-kicker {
   display: inline-block;
   margin-bottom: 10px;
-  color: #7dd3fc;
+  color: #0f766e;
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -2831,6 +2833,7 @@ body.design-friendly .partner-ad-copy strong::before {
 .safety-highlight-card p {
   margin: 0;
   line-height: 1.55;
+  color: #334155;
 }
 
 .safety-offer-grid {
@@ -2845,8 +2848,10 @@ body.design-friendly .partner-ad-copy strong::before {
   overflow: hidden;
   padding: 18px;
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
-    rgba(8, 15, 30, 0.5);
+    linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 252, 0.94)),
+    rgba(255, 255, 255, 0.9);
+  border-color: rgba(125, 211, 252, 0.16);
+  box-shadow: 0 22px 38px rgba(148, 163, 184, 0.14);
 }
 
 .safety-offer-card::before {
@@ -2856,7 +2861,7 @@ body.design-friendly .partner-ad-copy strong::before {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.14), transparent 64%);
+  background: radial-gradient(circle, rgba(125, 211, 252, 0.18), transparent 64%);
   pointer-events: none;
 }
 
@@ -2914,7 +2919,7 @@ body.design-friendly .partner-ad-copy strong::before {
 
 .safety-brand-kicker {
   margin: 0 0 4px;
-  color: #93c5fd;
+  color: #0f766e;
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -2924,6 +2929,7 @@ body.design-friendly .partner-ad-copy strong::before {
 .safety-offer-card h2 {
   margin: 0;
   font-size: 1.2rem;
+  color: #0f172a;
 }
 
 .safety-offer-pill {
@@ -2932,9 +2938,9 @@ body.design-friendly .partner-ad-copy strong::before {
   min-height: 32px;
   padding: 0 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(186, 230, 253, 0.14);
-  color: #dbeafe;
+  background: rgba(240, 249, 255, 0.92);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  color: #164e63;
   font-size: 0.76rem;
   font-weight: 800;
   white-space: nowrap;
@@ -2944,14 +2950,14 @@ body.design-friendly .partner-ad-copy strong::before {
   margin: 16px 0 14px;
   border-radius: 24px;
   overflow: hidden;
-  border: 1px solid rgba(186, 230, 253, 0.14);
-  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid rgba(186, 230, 253, 0.26);
+  background: rgba(240, 249, 255, 0.88);
 }
 
 .offer-scene {
   position: relative;
   min-height: 180px;
-  background: linear-gradient(180deg, rgba(14, 23, 42, 0.94), rgba(12, 35, 55, 0.92));
+  background: linear-gradient(180deg, rgba(233, 245, 252, 0.96), rgba(209, 230, 241, 0.94));
 }
 
 .offer-scene > * {
@@ -2967,7 +2973,7 @@ body.design-friendly .partner-ad-copy strong::before {
   inset: auto 0 32% 0;
   height: 44px;
   background:
-    linear-gradient(90deg, transparent 6%, rgba(255,255,255,0.12) 6% 10%, transparent 10% 17%, rgba(255,255,255,0.08) 17% 22%, transparent 22% 30%, rgba(255,255,255,0.14) 30% 36%, transparent 36% 43%, rgba(255,255,255,0.08) 43% 50%, transparent 50% 62%, rgba(255,255,255,0.12) 62% 70%, transparent 70%);
+    linear-gradient(90deg, transparent 6%, rgba(15,23,42,0.12) 6% 10%, transparent 10% 17%, rgba(15,23,42,0.08) 17% 22%, transparent 22% 30%, rgba(15,23,42,0.14) 30% 36%, transparent 36% 43%, rgba(15,23,42,0.08) 43% 50%, transparent 50% 62%, rgba(15,23,42,0.12) 62% 70%, transparent 70%);
   opacity: 0.9;
 }
 
@@ -2976,7 +2982,7 @@ body.design-friendly .partner-ad-copy strong::before {
   right: 0;
   bottom: 0;
   height: 48%;
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.1), rgba(15, 23, 42, 0.92));
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.08), rgba(100, 116, 139, 0.34));
 }
 
 .scene-kuhr .scene-guard,
@@ -3001,7 +3007,7 @@ body.design-friendly .partner-ad-copy strong::before {
 .scene-kiss .scene-stage {
   inset: auto 0 0 0;
   height: 44%;
-  background: linear-gradient(180deg, rgba(127, 29, 29, 0.24), rgba(30, 41, 59, 0.9));
+  background: linear-gradient(180deg, rgba(191, 219, 254, 0.36), rgba(100, 116, 139, 0.42));
 }
 
 .scene-kiss .scene-crowd {
@@ -3036,8 +3042,8 @@ body.design-friendly .partner-ad-copy strong::before {
 .scene-city .scene-map-grid {
   inset: 0;
   background:
-    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+    linear-gradient(rgba(15,23,42,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,0.08) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
@@ -3125,7 +3131,7 @@ body.design-friendly .partner-ad-copy strong::before {
   margin-left: -60px;
   border-radius: 50% 50% 18px 18px;
   background: linear-gradient(180deg, rgba(253, 224, 71, 0.9), rgba(251, 191, 36, 0.3));
-  box-shadow: 0 0 0 8px rgba(255,255,255,0.06);
+  box-shadow: 0 0 0 8px rgba(255,255,255,0.22);
 }
 
 .scene-church .scene-light {
@@ -3168,7 +3174,7 @@ body.design-friendly .partner-ad-copy strong::before {
 
 .safety-offer-text {
   margin: 0 0 10px;
-  color: var(--text);
+  color: #334155;
   line-height: 1.6;
 }
 
