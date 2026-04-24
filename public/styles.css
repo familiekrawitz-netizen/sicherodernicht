@@ -966,6 +966,11 @@ button:disabled:active,
   filter: grayscale(0.35) saturate(0.55) brightness(0.72);
 }
 
+.score-6.is-locked {
+  filter: saturate(0.92) brightness(0.9);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 10px 22px rgba(127, 29, 29, 0.22);
+}
+
 .score-button.is-sending {
   filter: brightness(1.04) saturate(1.1);
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55), 0 10px 26px rgba(15, 23, 42, 0.18);
