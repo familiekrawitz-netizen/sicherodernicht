@@ -13,3 +13,6 @@ data/reports.json
 
 # Alte Prototyp-Datei, die nicht fuer das Node/Render-Deployment gebraucht wird.
 server.rb
+
+# Lokale Zugangsdaten und Umgebungswerte.
+.env.local

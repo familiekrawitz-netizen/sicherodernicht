@@ -3,6 +3,24 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 
+function loadLocalEnv() {
+  const envFile = path.join(__dirname, '.env.local');
+  if (!fs.existsSync(envFile)) return;
+  const lines = fs.readFileSync(envFile, 'utf8').split(/\r?\n/);
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const index = trimmed.indexOf('=');
+    if (index === -1) return;
+    const key = trimmed.slice(0, index).trim();
+    const rawValue = trimmed.slice(index + 1).trim();
+    if (!key || Object.prototype.hasOwnProperty.call(process.env, key)) return;
+    process.env[key] = rawValue.replace(/^['"]|['"]$/g, '');
+  });
+}
+
+loadLocalEnv();
+
 const PORT = Number(process.env.PORT || 3000);
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
