@@ -2683,6 +2683,582 @@ body.design-friendly .partner-ad-copy strong::before {
   font-size: 0.86rem;
 }
 
+.safety-directory-shell {
+  max-width: 1280px;
+}
+
+.safety-directory-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 22px;
+  align-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 28%),
+    radial-gradient(circle at left bottom, rgba(16, 185, 129, 0.16), transparent 30%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.84), rgba(13, 40, 61, 0.72));
+}
+
+.safety-directory-copy p:last-child {
+  max-width: 64ch;
+}
+
+.safety-directory-tags,
+.safety-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.safety-directory-tags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(186, 230, 253, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2f4ff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.safety-hero-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.safety-orbit-card {
+  position: relative;
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  border-radius: 36px;
+  border: 1px solid rgba(186, 230, 253, 0.18);
+  background:
+    radial-gradient(circle at center, rgba(56, 189, 248, 0.2), transparent 42%),
+    linear-gradient(135deg, rgba(8, 15, 30, 0.9), rgba(14, 40, 62, 0.78));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 28px 60px rgba(2, 6, 23, 0.32);
+}
+
+.safety-orbit-card::before,
+.safety-orbit-card::after {
+  content: "";
+  position: absolute;
+  inset: 12% 12%;
+  border-radius: 50%;
+  border: 1px dashed rgba(186, 230, 253, 0.16);
+}
+
+.safety-orbit-card::after {
+  inset: 24% 24%;
+}
+
+.orbit-core,
+.orbit-node {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-weight: 900;
+}
+
+.orbit-core {
+  inset: 50%;
+  width: 108px;
+  height: 108px;
+  margin: -54px 0 0 -54px;
+  background: linear-gradient(135deg, #f8fafc, #dbeafe);
+  color: #0f172a;
+  box-shadow: 0 14px 30px rgba(125, 211, 252, 0.22);
+}
+
+.orbit-node {
+  min-width: 86px;
+  height: 42px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(186, 230, 253, 0.16);
+  color: #e2f4ff;
+  backdrop-filter: blur(12px);
+}
+
+.orbit-node-a {
+  top: 18%;
+  left: 10%;
+}
+
+.orbit-node-b {
+  top: 24%;
+  right: 8%;
+}
+
+.orbit-node-c {
+  right: 16%;
+  bottom: 16%;
+}
+
+.safety-highlight-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.safety-highlight-card {
+  min-height: 100%;
+  background:
+    linear-gradient(140deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04)),
+    rgba(8, 15, 30, 0.44);
+}
+
+.safety-highlight-kicker {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #7dd3fc;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.safety-highlight-card strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.06rem;
+}
+
+.safety-highlight-card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.safety-offer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.safety-offer-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(8, 15, 30, 0.5);
+}
+
+.safety-offer-card::before {
+  content: "";
+  position: absolute;
+  inset: auto -10% -42% auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14), transparent 64%);
+  pointer-events: none;
+}
+
+.safety-offer-card:last-child {
+  grid-column: 1 / -1;
+}
+
+.safety-offer-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.safety-offer-brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.safety-logo-badge {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: white;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 14px 28px rgba(2, 6, 23, 0.24);
+}
+
+.safety-logo-badge svg {
+  width: 34px;
+  height: 34px;
+}
+
+.offer-kuhr .safety-logo-badge {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+}
+
+.offer-kiss .safety-logo-badge {
+  background: linear-gradient(135deg, #1d4ed8, #38bdf8);
+}
+
+.offer-city .safety-logo-badge {
+  background: linear-gradient(135deg, #334155, #475569);
+}
+
+.offer-verein .safety-logo-badge {
+  background: linear-gradient(135deg, #7c3aed, #c084fc);
+}
+
+.offer-church .safety-logo-badge {
+  background: linear-gradient(135deg, #9a3412, #f59e0b);
+}
+
+.safety-brand-kicker {
+  margin: 0 0 4px;
+  color: #93c5fd;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.safety-offer-card h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.safety-offer-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(186, 230, 253, 0.14);
+  color: #dbeafe;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.safety-offer-image {
+  margin: 16px 0 14px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(186, 230, 253, 0.14);
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.offer-scene {
+  position: relative;
+  min-height: 180px;
+  background: linear-gradient(180deg, rgba(14, 23, 42, 0.94), rgba(12, 35, 55, 0.92));
+}
+
+.offer-scene > * {
+  position: absolute;
+}
+
+.scene-kuhr .scene-glow {
+  inset: 0;
+  background: radial-gradient(circle at 68% 28%, rgba(250, 204, 21, 0.28), transparent 24%);
+}
+
+.scene-kuhr .scene-cityline {
+  inset: auto 0 32% 0;
+  height: 44px;
+  background:
+    linear-gradient(90deg, transparent 6%, rgba(255,255,255,0.12) 6% 10%, transparent 10% 17%, rgba(255,255,255,0.08) 17% 22%, transparent 22% 30%, rgba(255,255,255,0.14) 30% 36%, transparent 36% 43%, rgba(255,255,255,0.08) 43% 50%, transparent 50% 62%, rgba(255,255,255,0.12) 62% 70%, transparent 70%);
+  opacity: 0.9;
+}
+
+.scene-kuhr .scene-walkway {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48%;
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.1), rgba(15, 23, 42, 0.92));
+}
+
+.scene-kuhr .scene-guard,
+.scene-kuhr .scene-customer {
+  bottom: 22px;
+  width: 24px;
+  border-radius: 18px 18px 10px 10px;
+}
+
+.scene-kuhr .scene-guard {
+  left: 34%;
+  height: 76px;
+  background: linear-gradient(180deg, #0ea5e9, #1e293b);
+}
+
+.scene-kuhr .scene-customer {
+  left: 48%;
+  height: 62px;
+  background: linear-gradient(180deg, #f8fafc, #64748b);
+}
+
+.scene-kiss .scene-stage {
+  inset: auto 0 0 0;
+  height: 44%;
+  background: linear-gradient(180deg, rgba(127, 29, 29, 0.24), rgba(30, 41, 59, 0.9));
+}
+
+.scene-kiss .scene-crowd {
+  bottom: 16px;
+  width: 26px;
+  border-radius: 16px 16px 10px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(148,163,184,0.8));
+}
+
+.scene-kiss .crowd-a { left: 26%; height: 56px; }
+.scene-kiss .crowd-b { left: 42%; height: 72px; }
+.scene-kiss .crowd-c { left: 58%; height: 64px; }
+
+.scene-kiss .scene-beam {
+  top: -12px;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(180deg, rgba(56,189,248,0.42), transparent 74%);
+  filter: blur(2px);
+}
+
+.scene-kiss .beam-a {
+  left: 18%;
+  transform: rotate(28deg);
+}
+
+.scene-kiss .beam-b {
+  right: 14%;
+  transform: rotate(-24deg);
+}
+
+.scene-city .scene-map-grid {
+  inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.scene-city .scene-route {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f8fafc, #7dd3fc);
+}
+
+.scene-city .route-a {
+  top: 34%;
+  left: 18%;
+  width: 46%;
+  transform: rotate(22deg);
+}
+
+.scene-city .route-b {
+  top: 58%;
+  right: 14%;
+  width: 34%;
+  transform: rotate(-18deg);
+}
+
+.scene-city .scene-pin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #f97316;
+  box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.15);
+}
+
+.scene-city .pin-a { top: 26%; left: 20%; }
+.scene-city .pin-b { top: 44%; left: 50%; }
+.scene-city .pin-c { top: 62%; right: 18%; }
+
+.scene-verein .scene-table {
+  left: 20%;
+  right: 20%;
+  bottom: 22%;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c084fc, #f5d0fe);
+}
+
+.scene-verein .scene-person {
+  bottom: 32px;
+  width: 24px;
+  border-radius: 18px 18px 10px 10px;
+}
+
+.scene-verein .person-a {
+  left: 24%;
+  height: 70px;
+  background: linear-gradient(180deg, #f8fafc, #a855f7);
+}
+
+.scene-verein .person-b {
+  left: 46%;
+  height: 82px;
+  background: linear-gradient(180deg, #e9d5ff, #7e22ce);
+}
+
+.scene-verein .person-c {
+  right: 24%;
+  height: 68px;
+  background: linear-gradient(180deg, #f5d0fe, #db2777);
+}
+
+.scene-verein .scene-lamp {
+  top: 18px;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  margin-left: -40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.38), transparent 70%);
+}
+
+.scene-church .scene-window {
+  top: 18px;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  margin-left: -60px;
+  border-radius: 50% 50% 18px 18px;
+  background: linear-gradient(180deg, rgba(253, 224, 71, 0.9), rgba(251, 191, 36, 0.3));
+  box-shadow: 0 0 0 8px rgba(255,255,255,0.06);
+}
+
+.scene-church .scene-light {
+  left: 50%;
+  bottom: 0;
+  width: 220px;
+  height: 120px;
+  margin-left: -110px;
+  background: linear-gradient(180deg, rgba(251,191,36,0.18), transparent 82%);
+  clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+}
+
+.scene-church .scene-bench {
+  left: 22%;
+  right: 22%;
+  bottom: 20px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7c2d12, #c2410c);
+}
+
+.scene-church .scene-cross {
+  top: 30px;
+  left: 50%;
+  width: 20px;
+  height: 72px;
+  margin-left: -10px;
+  background: rgba(120, 53, 15, 0.9);
+}
+
+.scene-church .scene-cross::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: -18px;
+  right: -18px;
+  height: 16px;
+  background: rgba(120, 53, 15, 0.9);
+}
+
+.safety-offer-text {
+  margin: 0 0 10px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.safety-offer-list {
+  margin-top: 10px;
+}
+
+.safety-offer-list li + li {
+  margin-top: 8px;
+}
+
+.safety-directory-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 980px) {
+  .safety-directory-hero,
+  .safety-highlight-strip,
+  .safety-offer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .safety-offer-card:last-child {
+    grid-column: auto;
+  }
+
+  .safety-directory-note {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .safety-directory-hero {
+    gap: 16px;
+  }
+
+  .safety-orbit-card {
+    width: min(100%, 270px);
+  }
+
+  .orbit-core {
+    width: 88px;
+    height: 88px;
+    margin: -44px 0 0 -44px;
+    font-size: 0.95rem;
+  }
+
+  .orbit-node {
+    min-width: 72px;
+    height: 36px;
+    padding: 0 12px;
+    font-size: 0.78rem;
+  }
+
+  .safety-offer-top,
+  .safety-offer-brand {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .safety-offer-pill {
+    margin-top: 4px;
+  }
+
+  .safety-offer-image {
+    margin-top: 14px;
+  }
+
+  .offer-scene {
+    min-height: 156px;
+  }
+
+  .scene-kiss .scene-crowd,
+  .scene-kuhr .scene-guard,
+  .scene-kuhr .scene-customer,
+  .scene-verein .scene-person {
+    transform: scale(0.92);
+    transform-origin: bottom center;
+  }
+
+  .scene-city .scene-pin {
+    transform: rotate(-45deg) scale(0.88);
+  }
+}
+
 .legal-table-wrap {
   overflow-x: auto;
   border-radius: 18px;
@@ -3278,6 +3854,9 @@ body.design-friendly .partner-ad-copy strong::before {
   .company-feed-marquee,
   .company-ticker-track,
   .sponsor-run,
+  .safety-orbit-card,
+  .safety-orbit-card::before,
+  .safety-orbit-card::after,
   .partner-sponsor-card::before,
   .sponsor-name,
   .sponsor-name::after,
