@@ -165,6 +165,19 @@
         adminStatus.textContent = message;
       }
 
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function safeHexColor(value, fallback = '#2563eb') {
+        return /^#[0-9a-f]{6}$/i.test(String(value || '').trim()) ? String(value).trim() : fallback;
+      }
+
       async function api(path, options = {}) {
         const response = await fetch(path, {
           ...options,
@@ -292,13 +305,13 @@
           .map(
             (company) => `
               <div class="admin-row">
-                <span class="ticker-mark" style="background:${company.color}">${company.logoText}</span>
+                <span class="ticker-mark" style="background:${safeHexColor(company.color)}">${escapeHtml(company.logoText)}</span>
                 <div>
-                  <strong>${company.name}</strong><br>
-                  <small>${company.id}</small>
+                  <strong>${escapeHtml(company.name)}</strong><br>
+                  <small>${escapeHtml(company.id)}</small>
                 </div>
-                <button class="ghost-button tiny" data-edit-company="${company.id}" type="button">Bearbeiten</button>
-                <button class="ghost-button tiny danger-admin" data-delete-company="${company.id}" type="button">Löschen</button>
+                <button class="ghost-button tiny" data-edit-company="${escapeHtml(company.id)}" type="button">Bearbeiten</button>
+                <button class="ghost-button tiny danger-admin" data-delete-company="${escapeHtml(company.id)}" type="button">Löschen</button>
               </div>
             `
           )
@@ -331,13 +344,13 @@
             (user) => `
               <div class="admin-row">
                 <div>
-                  <strong>${user.name}</strong><br>
-                  <small>${user.role === 'company' ? 'Firmennutzer' : 'Privatnutzer'} · ${user.code}</small><br>
+                  <strong>${escapeHtml(user.name)}</strong><br>
+                  <small>${user.role === 'company' ? 'Firmennutzer' : 'Privatnutzer'} · ${escapeHtml(user.code)}</small><br>
                   <small>${user.hasPin ? 'PIN hinterlegt' : 'Keine PIN gesetzt'}</small><br>
-                  <small>${user.companyName || 'Keine Firma'}</small>
+                  <small>${escapeHtml(user.companyName || 'Keine Firma')}</small>
                 </div>
-                <button class="ghost-button tiny" data-edit-user="${user.id}" type="button">Bearbeiten</button>
-                <button class="ghost-button tiny danger-admin" data-delete-user="${user.id}" type="button">Entziehen</button>
+                <button class="ghost-button tiny" data-edit-user="${escapeHtml(user.id)}" type="button">Bearbeiten</button>
+                <button class="ghost-button tiny danger-admin" data-delete-user="${escapeHtml(user.id)}" type="button">Entziehen</button>
               </div>
             `
           )

@@ -16,6 +16,11 @@ const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const PRIVATE_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const COMPANY_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
+const FUN_REPORT_COOLDOWN_MS = 1000 * 60 * 15;
+const LOGIN_ATTEMPT_WINDOW_MS = 1000 * 60 * 15;
+const LOGIN_BLOCK_MS = 1000 * 60 * 15;
+const MAX_LOGIN_FAILURES = 5;
+const PUBLIC_ALERT_VISIBILITY_MS = 1000 * 60 * 60 * 24;
 const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
 const ADMIN_CODE = String(process.env.ADMIN_CODE || '').trim().toLowerCase();
 const ADMIN_PIN = String(process.env.ADMIN_PIN || '').trim();
@@ -498,12 +503,15 @@ function pruneStore(store) {
   const now = Date.now();
   store.sessions = store.sessions.filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.adminSessions = (store.adminSessions || []).filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
-  store.cooldowns = store.cooldowns.filter((entry) => now - new Date(entry.createdAt).getTime() <= PUBLIC_RATING_COOLDOWN_MS);
+  store.cooldowns = store.cooldowns.filter((entry) => cooldownExpiresAt(entry) > now);
   store.alertAudits = (store.alertAudits || []).filter((entry) => {
     const retentionUntil = entry.retentionUntil ? new Date(entry.retentionUntil).getTime() : 0;
     return retentionUntil && retentionUntil >= now;
   });
   store.users = store.users.map((user) => {
+    if (user.role !== 'company' && user.lastKnownLocation) {
+      return { ...user, lastKnownLocation: null };
+    }
     const lastSeen = user.lastKnownLocation ? new Date(user.lastKnownLocation.updatedAt).getTime() : 0;
     if (lastSeen && now - lastSeen > COMPANY_LOCATION_TTL_MS) {
       return { ...user, lastKnownLocation: null };
@@ -649,6 +657,71 @@ function viewerFingerprint(req, cellId) {
   return makeHash(`${ANTI_SPAM_SALT}|${dateKey}|${cellId}|${ip}|${ua}`);
 }
 
+function requestFingerprint(req, scope, code = '') {
+  const ip = req.socket.remoteAddress || '0.0.0.0';
+  const ua = req.headers['user-agent'] || 'unknown';
+  return makeHash(`${ANTI_SPAM_SALT}|${scope}|${String(code || '').toLowerCase()}|${ip}|${ua}`);
+}
+
+function cooldownExpiresAt(entry) {
+  if (entry && entry.expiresAt) {
+    return new Date(entry.expiresAt).getTime();
+  }
+  if (entry && entry.createdAt) {
+    return new Date(entry.createdAt).getTime() + PUBLIC_RATING_COOLDOWN_MS;
+  }
+  return 0;
+}
+
+function activeCooldownEntry(store, kind, fingerprint) {
+  const now = Date.now();
+  return store.cooldowns.find((entry) =>
+    entry.kind === kind &&
+    entry.fingerprint === fingerprint &&
+    cooldownExpiresAt(entry) > now
+  ) || null;
+}
+
+function recentCooldownCount(store, kind, fingerprint, windowMs) {
+  const now = Date.now();
+  return store.cooldowns.filter((entry) =>
+    entry.kind === kind &&
+    entry.fingerprint === fingerprint &&
+    now - new Date(entry.createdAt).getTime() <= windowMs
+  ).length;
+}
+
+function clearCooldowns(store, kinds, fingerprint) {
+  const allowedKinds = new Set(kinds);
+  store.cooldowns = store.cooldowns.filter((entry) =>
+    !(allowedKinds.has(entry.kind) && entry.fingerprint === fingerprint)
+  );
+}
+
+function pushCooldown(store, kind, fingerprint, ttlMs, extra = {}) {
+  const now = Date.now();
+  store.cooldowns.push({
+    kind,
+    fingerprint,
+    createdAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + ttlMs).toISOString(),
+    ...extra
+  });
+}
+
+function registerLoginFailure(store, scope, fingerprint) {
+  const failureKind = `${scope}-failure`;
+  const blockKind = `${scope}-block`;
+  pushCooldown(store, failureKind, fingerprint, LOGIN_ATTEMPT_WINDOW_MS);
+  const failures = recentCooldownCount(store, failureKind, fingerprint, LOGIN_ATTEMPT_WINDOW_MS);
+  if (failures >= MAX_LOGIN_FAILURES) {
+    clearCooldowns(store, [blockKind], fingerprint);
+    pushCooldown(store, blockKind, fingerprint, LOGIN_BLOCK_MS);
+    return LOGIN_BLOCK_MS;
+  }
+  return 0;
+}
+
 function updateUserLocation(store, userId, lat, lng) {
   const index = store.users.findIndex((entry) => entry.id === userId);
   if (index === -1 || !isFiniteLatLng(lat, lng)) return;
@@ -693,7 +766,7 @@ function publicSummary(store, view) {
   const from = fromByView[validView];
   const ratings = store.ratings.filter((entry) => new Date(entry.createdAt).getTime() >= from);
   const cells = aggregateRatings(ratings);
-  const alerts = store.alerts;
+  const alerts = store.alerts.filter((entry) => new Date(entry.createdAt).getTime() >= now - PUBLIC_ALERT_VISIBILITY_MS);
   const funReports = store.funReports.filter((entry) => entry.isVisible !== false);
   return {
     cells,
@@ -826,7 +899,7 @@ function legendFilterData(store, score) {
   if (score === 6) {
     return {
       cells: [],
-      alerts: store.alerts,
+      alerts: store.alerts.filter((entry) => new Date(entry.createdAt).getTime() >= now - PUBLIC_ALERT_VISIBILITY_MS),
       funReports: [],
       companies: companySummary(store),
       emergencyPlaces: store.emergencyPlaces
@@ -1241,17 +1314,33 @@ const server = http.createServer(async (req, res) => {
       const parsed = JSON.parse((await readBody(req)) || '{}');
       const code = String(parsed.code || '').trim().toLowerCase();
       const pin = String(parsed.pin || '').trim();
+      const fingerprint = requestFingerprint(req, 'admin-login', code);
+      const existingBlock = activeCooldownEntry(store, 'admin-login-block', fingerprint);
 
       if (!ADMIN_CODE || !ADMIN_PIN) {
         sendJson(res, 503, { error: 'Admin-Zugang ist nicht konfiguriert' });
         return;
       }
 
-      if (code !== ADMIN_CODE || pin !== ADMIN_PIN) {
-        sendJson(res, 401, { error: 'Admin-Login fehlgeschlagen' });
+      if (existingBlock) {
+        sendJson(res, 429, {
+          error: 'Zu viele Admin-Login-Versuche. Bitte spaeter erneut versuchen.',
+          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(existingBlock) - Date.now()) / 60000))
+        });
         return;
       }
 
+      if (code !== ADMIN_CODE || pin !== ADMIN_PIN) {
+        const blockMs = registerLoginFailure(store, 'admin-login', fingerprint);
+        writeStore(store);
+        sendJson(res, blockMs ? 429 : 401, {
+          error: blockMs ? 'Zu viele Admin-Login-Versuche. Bitte spaeter erneut versuchen.' : 'Admin-Login fehlgeschlagen',
+          ...(blockMs ? { retryAfterMinutes: Math.max(1, Math.ceil(blockMs / 60000)) } : {})
+        });
+        return;
+      }
+
+      clearCooldowns(store, ['admin-login-failure', 'admin-login-block'], fingerprint);
       const token = createToken();
       store.adminSessions = store.adminSessions || [];
       store.adminSessions.push({
@@ -1474,6 +1563,18 @@ const server = http.createServer(async (req, res) => {
       }
 
       const snapped = snapToGrid(lat, lng);
+      const cellId = cellIdFor(lat, lng);
+      const fingerprint = viewerFingerprint(req, cellId);
+      const latestFun = activeCooldownEntry(store, 'fun-report', fingerprint);
+
+      if (latestFun) {
+        sendJson(res, 429, {
+          error: 'Bitte warte kurz, bevor du an diesem Ort erneut eine Fun-Meldung sendest.',
+          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(latestFun) - Date.now()) / 60000))
+        });
+        return;
+      }
+
       store.funReports.push({
         id: `fun-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
         lat: snapped.lat,
@@ -1482,6 +1583,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: new Date().toISOString(),
         isVisible: true
       });
+      pushCooldown(store, 'fun-report', fingerprint, FUN_REPORT_COOLDOWN_MS, { cellId });
       writeStore(store);
       sendJson(res, 201, { ok: true });
     } catch {
@@ -1497,13 +1599,30 @@ const server = http.createServer(async (req, res) => {
       const pin = String(parsed.pin || '').trim();
       const lat = Number(parsed.lat);
       const lng = Number(parsed.lng);
-      const user = store.users.find((entry) => entry.code === code && verifyPin(pin, entry.pin));
+      const fingerprint = requestFingerprint(req, 'user-login', code);
+      const existingBlock = activeCooldownEntry(store, 'user-login-block', fingerprint);
 
-      if (!user) {
-        sendJson(res, 401, { error: 'Login fehlgeschlagen' });
+      if (existingBlock) {
+        sendJson(res, 429, {
+          error: 'Zu viele Login-Versuche. Bitte spaeter erneut versuchen.',
+          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(existingBlock) - Date.now()) / 60000))
+        });
         return;
       }
 
+      const user = store.users.find((entry) => entry.code === code && verifyPin(pin, entry.pin));
+
+      if (!user) {
+        const blockMs = registerLoginFailure(store, 'user-login', fingerprint);
+        writeStore(store);
+        sendJson(res, blockMs ? 429 : 401, {
+          error: blockMs ? 'Zu viele Login-Versuche. Bitte spaeter erneut versuchen.' : 'Login fehlgeschlagen',
+          ...(blockMs ? { retryAfterMinutes: Math.max(1, Math.ceil(blockMs / 60000)) } : {})
+        });
+        return;
+      }
+
+      clearCooldowns(store, ['user-login-failure', 'user-login-block'], fingerprint);
       const token = createToken();
       store.sessions.push({
         token,
@@ -1511,7 +1630,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: new Date().toISOString()
       });
 
-      if (isFiniteLatLng(lat, lng)) {
+      if (user.role === 'company' && isFiniteLatLng(lat, lng)) {
         updateUserLocation(store, user.id, lat, lng);
       }
 
@@ -1594,6 +1713,12 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 401, { error: 'Nicht angemeldet' });
         return;
       }
+      if (auth.user.role !== 'company') {
+        clearUserLocation(store, auth.user.id);
+        writeStore(store);
+        sendJson(res, 200, { ok: true, sharing: false });
+        return;
+      }
       if (!share) {
         clearUserLocation(store, auth.user.id);
         writeStore(store);
@@ -1637,7 +1762,9 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      updateUserLocation(store, auth.user.id, lat, lng);
+      if (auth.user.role === 'company') {
+        updateUserLocation(store, auth.user.id, lat, lng);
+      }
       const snapped = snapToGrid(lat, lng);
       const company = auth.user.companyId
         ? store.companies.find((entry) => entry.id === auth.user.companyId) || null

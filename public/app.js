@@ -672,6 +672,10 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function safeHexColor(value, fallback = '#2563eb') {
+  return /^#[0-9a-f]{6}$/i.test(String(value || '').trim()) ? String(value).trim() : fallback;
+}
+
 function showStatus(message) {
   submitStatus.textContent = message;
 }
@@ -1408,8 +1412,8 @@ function renderCompanyTicker() {
         .map(
           (company) => `
             <span class="ticker-logo">
-              <span class="ticker-mark" style="background:${company.color}">${company.logoText}</span>
-              <span>${company.name}</span>
+              <span class="ticker-mark" style="background:${safeHexColor(company.color)}">${escapeHtml(company.logoText)}</span>
+              <span>${escapeHtml(company.name)}</span>
             </span>
           `
         )
@@ -1716,7 +1720,7 @@ function setUserPosition(lat, lng, announce = true, shareLocation = true, showMa
     showStatus(formatCoords(lat, lng));
   }
   drawGuidance();
-  const mayShareCompanyLocation = !state.user || state.user.role !== 'company' || state.shareCompanyLocation;
+  const mayShareCompanyLocation = state.user && state.user.role === 'company' && state.shareCompanyLocation;
   if (shareLocation && state.token && mayShareCompanyLocation) {
     api('/api/location', {
       method: 'POST',
@@ -2037,14 +2041,18 @@ async function submitFun(tag) {
     }
   }
   const finalTargetPos = state.pendingFunPos || state.userPos;
-  await api('/api/fun', {
-    method: 'POST',
-    body: JSON.stringify({ lat: finalTargetPos.lat, lng: finalTargetPos.lng, tag })
-  });
-  state.pendingFunPos = null;
-  showStatus(t('funSaved'));
-  await loadMapData();
-  await loadTicker();
+  try {
+    await api('/api/fun', {
+      method: 'POST',
+      body: JSON.stringify({ lat: finalTargetPos.lat, lng: finalTargetPos.lng, tag })
+    });
+    state.pendingFunPos = null;
+    showStatus(t('funSaved'));
+    await loadMapData();
+    await loadTicker();
+  } catch (error) {
+    showStatus(errorMessage(error));
+  }
 }
 
 async function submitLogin() {
