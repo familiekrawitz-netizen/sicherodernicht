@@ -2699,6 +2699,21 @@ body.design-friendly .partner-ad-copy strong::before {
     linear-gradient(135deg, rgba(244, 249, 255, 0.96), rgba(229, 242, 250, 0.94));
 }
 
+.safety-directory-hero h1 {
+  color: #0f172a;
+}
+
+.safety-directory-copy p {
+  color: #334155;
+}
+
+.safety-directory-copy .chip {
+  background: rgba(15, 23, 42, 0.06);
+  color: #155e75;
+  border: 1px solid rgba(14, 116, 144, 0.14);
+  font-weight: 800;
+}
+
 .safety-directory-copy p:last-child {
   max-width: 64ch;
 }
@@ -2854,6 +2869,17 @@ body.design-friendly .partner-ad-copy strong::before {
   box-shadow: 0 22px 38px rgba(148, 163, 184, 0.14);
 }
 
+.safety-offer-card::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 0;
+  height: 4px;
+  border-radius: 0 0 999px 999px;
+  opacity: 0.92;
+}
+
 .safety-offer-card::before {
   content: "";
   position: absolute;
@@ -2867,6 +2893,61 @@ body.design-friendly .partner-ad-copy strong::before {
 
 .safety-offer-card:last-child {
   grid-column: 1 / -1;
+}
+
+.offer-kuhr {
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 32%),
+    linear-gradient(160deg, rgba(246, 255, 253, 0.98), rgba(238, 252, 249, 0.96));
+  border-color: rgba(20, 184, 166, 0.18);
+}
+
+.offer-kuhr::after {
+  background: linear-gradient(90deg, #0f766e, #14b8a6);
+}
+
+.offer-kiss {
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.2), transparent 34%),
+    linear-gradient(160deg, rgba(246, 251, 255, 0.98), rgba(237, 247, 255, 0.96));
+  border-color: rgba(56, 189, 248, 0.2);
+}
+
+.offer-kiss::after {
+  background: linear-gradient(90deg, #1d4ed8, #38bdf8);
+}
+
+.offer-city {
+  background:
+    radial-gradient(circle at top right, rgba(100, 116, 139, 0.18), transparent 34%),
+    linear-gradient(160deg, rgba(248, 250, 252, 0.98), rgba(240, 244, 247, 0.96));
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
+.offer-city::after {
+  background: linear-gradient(90deg, #334155, #64748b);
+}
+
+.offer-verein {
+  background:
+    radial-gradient(circle at top right, rgba(192, 132, 252, 0.18), transparent 34%),
+    linear-gradient(160deg, rgba(252, 247, 255, 0.98), rgba(248, 241, 255, 0.96));
+  border-color: rgba(192, 132, 252, 0.22);
+}
+
+.offer-verein::after {
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+}
+
+.offer-church {
+  background:
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 34%),
+    linear-gradient(160deg, rgba(255, 251, 243, 0.98), rgba(255, 246, 232, 0.96));
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+.offer-church::after {
+  background: linear-gradient(90deg, #9a3412, #f59e0b);
 }
 
 .safety-offer-top {
@@ -2926,6 +3007,31 @@ body.design-friendly .partner-ad-copy strong::before {
   text-transform: uppercase;
 }
 
+.offer-kuhr .safety-brand-kicker,
+.offer-kuhr .safety-offer-pill {
+  color: #0f766e;
+}
+
+.offer-kiss .safety-brand-kicker,
+.offer-kiss .safety-offer-pill {
+  color: #1d4ed8;
+}
+
+.offer-city .safety-brand-kicker,
+.offer-city .safety-offer-pill {
+  color: #334155;
+}
+
+.offer-verein .safety-brand-kicker,
+.offer-verein .safety-offer-pill {
+  color: #7c3aed;
+}
+
+.offer-church .safety-brand-kicker,
+.offer-church .safety-offer-pill {
+  color: #9a3412;
+}
+
 .safety-offer-card h2 {
   margin: 0;
   font-size: 1.2rem;
@@ -2938,9 +3044,8 @@ body.design-friendly .partner-ad-copy strong::before {
   min-height: 32px;
   padding: 0 11px;
   border-radius: 999px;
-  background: rgba(240, 249, 255, 0.92);
-  border: 1px solid rgba(125, 211, 252, 0.18);
-  color: #164e63;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   font-size: 0.76rem;
   font-weight: 800;
   white-space: nowrap;
