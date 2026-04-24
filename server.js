@@ -45,6 +45,8 @@ const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
 const ADMIN_CODE = String(process.env.ADMIN_CODE || '').trim().toLowerCase();
 const ADMIN_PIN = String(process.env.ADMIN_PIN || '').trim();
 const TEST_ACCESS_CODE = String(process.env.TEST_ACCESS_CODE || '').trim();
+const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || '').trim().replace(/\/+$/, '');
+const NEWSLETTER_FROM_EMAIL = normalizeEmail(process.env.NEWSLETTER_FROM_EMAIL || '');
 const TEST_ACCESS_COOKIE = 'sicherodernicht_test_access';
 const TEST_ACCESS_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 
@@ -278,11 +280,20 @@ function normalizeStore(store) {
       email: normalizeEmail(user.email),
       newsletterOptIn: Boolean(user.newsletterOptIn),
       newsletterOptInAt: user.newsletterOptInAt || null,
+      newsletterStatus: user.newsletterStatus || (user.newsletterOptIn ? 'confirmed' : 'none'),
+      newsletterRequestedAt: user.newsletterRequestedAt || null,
+      newsletterConfirmedAt: user.newsletterConfirmedAt || user.newsletterOptInAt || null,
+      newsletterTokenHash: user.newsletterTokenHash || null,
+      newsletterDeliveryState: user.newsletterDeliveryState || null,
       createdAt: user.createdAt || null,
       registrationSource: user.registrationSource || 'admin'
     };
     if (nextUser.newsletterOptIn && !nextUser.newsletterOptInAt) {
       nextUser.newsletterOptInAt = nextUser.createdAt || new Date().toISOString();
+      changed = true;
+    }
+    if (nextUser.newsletterStatus === 'confirmed' && !nextUser.newsletterConfirmedAt) {
+      nextUser.newsletterConfirmedAt = nextUser.newsletterOptInAt || nextUser.createdAt || new Date().toISOString();
       changed = true;
     }
     if (!nextUser.pin || isStoredPinHash(nextUser.pin)) return nextUser;
@@ -1119,7 +1130,7 @@ function exportRecords(store, type = 'all') {
   }));
 
   const newsletterContacts = store.users
-    .filter((user) => user.role === 'private' && user.email && user.newsletterOptIn)
+    .filter((user) => user.role === 'private' && user.email && user.newsletterStatus === 'confirmed' && user.newsletterOptIn)
     .map((user) => ({
       dataset: 'newsletter_contact',
       id: user.id,
@@ -1143,7 +1154,10 @@ function exportRecords(store, type = 'all') {
       retentionUntil: '',
       email: user.email || '',
       newsletterOptIn: true,
-      newsletterOptInAt: user.newsletterOptInAt || ''
+      newsletterOptInAt: user.newsletterOptInAt || '',
+      newsletterStatus: user.newsletterStatus || 'confirmed',
+      newsletterRequestedAt: user.newsletterRequestedAt || '',
+      newsletterConfirmedAt: user.newsletterConfirmedAt || user.newsletterOptInAt || ''
     }));
 
   const recordsByType = {
@@ -1193,7 +1207,10 @@ function recordsToCsv(records) {
     'retentionUntil',
     'email',
     'newsletterOptIn',
-    'newsletterOptInAt'
+    'newsletterOptInAt',
+    'newsletterStatus',
+    'newsletterRequestedAt',
+    'newsletterConfirmedAt'
   ];
   const rows = records.map((record) => headers.map((header) => csvEscape(record[header])).join(';'));
   return [headers.join(';'), ...rows].join('\n');
@@ -1232,6 +1249,62 @@ function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function newsletterSenderConfigured() {
+  return Boolean(NEWSLETTER_FROM_EMAIL && PUBLIC_BASE_URL);
+}
+
+function createNewsletterToken() {
+  return crypto.randomBytes(24).toString('hex');
+}
+
+function hashNewsletterToken(token) {
+  return makeHash(`newsletter|${String(token || '')}|${ANTI_SPAM_SALT}`);
+}
+
+function buildNewsletterConfirmationUrl(token) {
+  if (!PUBLIC_BASE_URL || !token) return '';
+  return `${PUBLIC_BASE_URL}/newsletter-bestaetigen.html?token=${encodeURIComponent(token)}`;
+}
+
+function applyNewsletterSelection({ existingUser = null, email = '', role = 'private', requestedOptIn = false, source = 'admin' }) {
+  const cleanEmail = role === 'private' ? normalizeEmail(email) : '';
+  const wantsNewsletter = role === 'private' && requestedOptIn === true && Boolean(cleanEmail);
+  const now = new Date().toISOString();
+  const next = {
+    email: cleanEmail,
+    newsletterOptIn: false,
+    newsletterOptInAt: null,
+    newsletterStatus: 'none',
+    newsletterRequestedAt: null,
+    newsletterConfirmedAt: null,
+    newsletterTokenHash: null,
+    newsletterDeliveryState: null,
+    newsletterConfirmationUrl: ''
+  };
+
+  if (!wantsNewsletter) {
+    return next;
+  }
+
+  if (source === 'self-service') {
+    const token = createNewsletterToken();
+    next.newsletterStatus = 'pending';
+    next.newsletterRequestedAt = now;
+    next.newsletterTokenHash = hashNewsletterToken(token);
+    next.newsletterDeliveryState = newsletterSenderConfigured() ? 'ready_to_send' : 'awaiting_mail_setup';
+    next.newsletterConfirmationUrl = buildNewsletterConfirmationUrl(token);
+    return next;
+  }
+
+  next.newsletterOptIn = true;
+  next.newsletterOptInAt = existingUser?.newsletterOptInAt || now;
+  next.newsletterStatus = 'confirmed';
+  next.newsletterRequestedAt = existingUser?.newsletterRequestedAt || now;
+  next.newsletterConfirmedAt = existingUser?.newsletterConfirmedAt || existingUser?.newsletterOptInAt || now;
+  next.newsletterDeliveryState = 'admin_confirmed';
+  return next;
+}
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(email || ''));
 }
@@ -1247,6 +1320,10 @@ function publicUserForAdmin(user) {
     email: user.email || '',
     newsletterOptIn: Boolean(user.newsletterOptIn),
     newsletterOptInAt: user.newsletterOptInAt || null,
+    newsletterStatus: user.newsletterStatus || (user.newsletterOptIn ? 'confirmed' : 'none'),
+    newsletterRequestedAt: user.newsletterRequestedAt || null,
+    newsletterConfirmedAt: user.newsletterConfirmedAt || null,
+    newsletterDeliveryState: user.newsletterDeliveryState || null,
     createdAt: user.createdAt || null,
     registrationSource: user.registrationSource || 'admin',
     lastKnownLocation: user.lastKnownLocation,
@@ -1290,7 +1367,7 @@ function analyticsSummary(store) {
       registeredAlerts: store.alerts.length,
       temporaryAlertAudits: (store.alertAudits || []).length,
       recentSecurityEvents: recentSecurityEvents(store, 100).length,
-      newsletterContacts: store.users.filter((user) => user.role === 'private' && user.email && user.newsletterOptIn).length
+      newsletterContacts: store.users.filter((user) => user.role === 'private' && user.email && user.newsletterStatus === 'confirmed' && user.newsletterOptIn).length
     },
     beautifulAreas: cells
       .filter((cell) => cell.averageScore <= 2)
@@ -1621,15 +1698,28 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      const newsletterFields = applyNewsletterSelection({
+        existingUser: existing,
+        email,
+        role,
+        requestedOptIn: newsletterOptIn,
+        source: 'admin'
+      });
+
       const user = {
         id,
         code,
         pin: pin ? hashPin(pin) : existing?.pin || '',
         role,
         name,
-        email: role === 'private' ? email : '',
-        newsletterOptIn,
-        newsletterOptInAt: newsletterOptIn ? (existing?.newsletterOptInAt || new Date().toISOString()) : null,
+        email: newsletterFields.email,
+        newsletterOptIn: newsletterFields.newsletterOptIn,
+        newsletterOptInAt: newsletterFields.newsletterOptInAt,
+        newsletterStatus: newsletterFields.newsletterStatus,
+        newsletterRequestedAt: newsletterFields.newsletterRequestedAt,
+        newsletterConfirmedAt: newsletterFields.newsletterConfirmedAt,
+        newsletterTokenHash: newsletterFields.newsletterTokenHash,
+        newsletterDeliveryState: newsletterFields.newsletterDeliveryState,
         createdAt: existing?.createdAt || new Date().toISOString(),
         registrationSource: existing?.registrationSource || 'admin',
         companyId: role === 'company' ? company.id : null,
@@ -1934,6 +2024,12 @@ const server = http.createServer(async (req, res) => {
       }
 
       clearCooldowns(store, ['private-register-failure', 'private-register-block'], fingerprint);
+      const newsletterFields = applyNewsletterSelection({
+        email,
+        role: 'private',
+        requestedOptIn: newsletterOptIn,
+        source: 'self-service'
+      });
 
       const user = {
         id: `u-private-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
@@ -1941,9 +2037,14 @@ const server = http.createServer(async (req, res) => {
         pin: hashPin(pin),
         role: 'private',
         name,
-        email,
-        newsletterOptIn,
-        newsletterOptInAt: newsletterOptIn ? new Date().toISOString() : null,
+        email: newsletterFields.email,
+        newsletterOptIn: newsletterFields.newsletterOptIn,
+        newsletterOptInAt: newsletterFields.newsletterOptInAt,
+        newsletterStatus: newsletterFields.newsletterStatus,
+        newsletterRequestedAt: newsletterFields.newsletterRequestedAt,
+        newsletterConfirmedAt: newsletterFields.newsletterConfirmedAt,
+        newsletterTokenHash: newsletterFields.newsletterTokenHash,
+        newsletterDeliveryState: newsletterFields.newsletterDeliveryState,
         createdAt: new Date().toISOString(),
         registrationSource: 'self-service',
         companyId: null,
@@ -1964,7 +2065,7 @@ const server = http.createServer(async (req, res) => {
         level: 'info',
         scope: 'registration',
         attemptedCode: code,
-        message: newsletterOptIn ? 'Neuer Privatnutzer mit Newsletter-Einwilligung registriert' : 'Neuer Privatnutzer registriert'
+        message: newsletterOptIn ? 'Neuer Privatnutzer mit vorbereiteter Newsletter-Einwilligung registriert' : 'Neuer Privatnutzer registriert'
       });
 
       writeStore(store);
@@ -1979,7 +2080,10 @@ const server = http.createServer(async (req, res) => {
         },
         registration: {
           email: user.email,
-          newsletterOptIn: user.newsletterOptIn
+          newsletterOptIn: user.newsletterOptIn,
+          newsletterStatus: user.newsletterStatus,
+          newsletterDeliveryState: user.newsletterDeliveryState,
+          confirmationPrepared: Boolean(user.newsletterTokenHash)
         }
       });
     } catch {
@@ -1992,6 +2096,50 @@ const server = http.createServer(async (req, res) => {
       writeStore(store);
       sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });
     }
+    return;
+  }
+
+  if (url.pathname === '/api/newsletter/confirm' && req.method === 'GET') {
+    const token = String(url.searchParams.get('token') || '').trim();
+    if (!token) {
+      sendJson(res, 400, { error: 'Bestaetigungslink unvollstaendig.' });
+      return;
+    }
+
+    const tokenHash = hashNewsletterToken(token);
+    const user = store.users.find((entry) => entry.newsletterTokenHash === tokenHash && entry.newsletterStatus === 'pending');
+    if (!user) {
+      sendJson(res, 404, { error: 'Dieser Bestaetigungslink ist ungueltig oder wurde bereits verwendet.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    store.users = store.users.map((entry) =>
+      entry.id !== user.id
+        ? entry
+        : {
+            ...entry,
+            newsletterOptIn: true,
+            newsletterOptInAt: now,
+            newsletterStatus: 'confirmed',
+            newsletterConfirmedAt: now,
+            newsletterTokenHash: null,
+            newsletterDeliveryState: newsletterSenderConfigured() ? 'confirmed' : 'confirmed_without_sender'
+          }
+    );
+    logSecurityEvent(store, {
+      kind: 'newsletter-confirmed',
+      level: 'info',
+      scope: 'registration',
+      attemptedCode: user.code,
+      message: 'Newsletter-Einwilligung bestaetigt'
+    });
+    writeStore(store);
+    sendJson(res, 200, {
+      ok: true,
+      message: 'Newsletter-Anmeldung bestaetigt.',
+      email: user.email
+    });
     return;
   }
 

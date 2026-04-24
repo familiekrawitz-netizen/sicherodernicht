@@ -151,8 +151,11 @@ const texts = {
     registerEmail: 'E-Mail (optional)',
     registerEmailHint: 'Nur nötig, wenn du Neuigkeiten per E-Mail möchtest.',
     registerNewsletter: 'Ich möchte per E-Mail über Neuigkeiten informiert werden.',
+    registerNewsletterDoi: 'Neuigkeiten per E-Mail werden erst nach Bestätigung über einen separaten Link aktiviert.',
     registerSubmit: 'Privatkonto anlegen',
     registerSuccess: 'Privatkonto angelegt. Du bist jetzt eingeloggt.',
+    registerSuccessPendingNewsletter: 'Privatkonto angelegt. Die E-Mail-Einwilligung ist vorbereitet und wird nach Bestätigung des Links aktiv.',
+    registerSuccessMailSetupPending: 'Der Bestätigungsversand ist vorbereitet. Der Maildienst wird noch angeschlossen.',
     loggedInAs: 'Angemeldet als',
     alertButton: 'Alarmmeldung 6 senden',
     dangerButton: 'aktuelle Gefahr',
@@ -333,8 +336,11 @@ const texts = {
     registerEmail: 'Email (optional)',
     registerEmailHint: 'Only needed if you want updates by email.',
     registerNewsletter: 'I want to receive updates by email.',
+    registerNewsletterDoi: 'Email updates only become active after you confirm a separate link.',
     registerSubmit: 'Create private account',
     registerSuccess: 'Private account created. You are now logged in.',
+    registerSuccessPendingNewsletter: 'Private account created. Email consent is prepared and will become active after link confirmation.',
+    registerSuccessMailSetupPending: 'Confirmation delivery is prepared. The mail service still needs to be connected.',
     loggedInAs: 'Logged in as',
     alertButton: 'Send alert 6',
     dangerButton: 'current danger',
@@ -1330,6 +1336,7 @@ function renderLoginPopover() {
           <input id="registerNewsletter" type="checkbox" />
           <span>${t('registerNewsletter')}</span>
         </label>
+        <small class="login-field-hint">${t('registerNewsletterDoi')}</small>
         <button id="registerSubmit" class="primary-button" type="button">${t('registerSubmit')}</button>
       </div>
     </div>
@@ -2228,7 +2235,14 @@ async function submitRegistration() {
     localStorage.removeItem('sicherodernicht-token');
     await loadProfile();
     loginPopover.classList.add('hidden');
-    showStatus(t('registerSuccess'));
+    const messages = [t('registerSuccess')];
+    if (payload.registration?.newsletterStatus === 'pending') {
+      messages.push(t('registerSuccessPendingNewsletter'));
+      if (payload.registration?.newsletterDeliveryState === 'awaiting_mail_setup') {
+        messages.push(t('registerSuccessMailSetupPending'));
+      }
+    }
+    showStatus(messages.join(' '));
     startPolling();
   } catch (error) {
     showStatus(errorMessage(error));
