@@ -2113,6 +2113,7 @@ async function logout() {
 
 function logoutOnAppClose() {
   if (!state.token) return;
+  if (document.visibilityState === 'hidden') return;
   const token = state.token;
   sessionStorage.removeItem('sicherodernicht-token');
   state.token = '';

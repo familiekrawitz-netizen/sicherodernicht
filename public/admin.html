@@ -298,7 +298,7 @@
 
       function renderCompanies() {
         userCompany.innerHTML = state.companies
-          .map((company) => `<option value="${company.id}">${company.name}</option>`)
+          .map((company) => `<option value="${escapeHtml(company.id)}">${escapeHtml(company.name)}</option>`)
           .join('');
 
         companyList.innerHTML = state.companies

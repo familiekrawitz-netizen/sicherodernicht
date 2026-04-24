@@ -1817,8 +1817,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    const activeSessionUserIds = new Set(store.sessions.map((entry) => entry.userId));
     const members = store.users
-      .filter((entry) => entry.companyId === auth.user.companyId)
+      .filter((entry) => entry.companyId === auth.user.companyId && entry.lastKnownLocation && activeSessionUserIds.has(entry.id))
       .map((entry) => ({
         id: entry.id,
         name: entry.name,
