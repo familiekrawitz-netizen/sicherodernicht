@@ -33,11 +33,12 @@ const TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
 const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const PRIVATE_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const COMPANY_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const SECURITY_EVENT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
 const FUN_REPORT_COOLDOWN_MS = 1000 * 60 * 15;
 const LOGIN_ATTEMPT_WINDOW_MS = 1000 * 60 * 15;
 const LOGIN_BLOCK_MS = 1000 * 60 * 15;
-const MAX_LOGIN_FAILURES = 5;
+const MAX_LOGIN_FAILURES = 3;
 const PUBLIC_ALERT_VISIBILITY_MS = 1000 * 60 * 60 * 24;
 const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
 const ADMIN_CODE = String(process.env.ADMIN_CODE || '').trim().toLowerCase();
@@ -50,6 +51,7 @@ const defaultStore = () => ({
   ratings: [],
   alerts: [],
   alertAudits: [],
+  securityEvents: [],
   funReports: [],
   sessions: [],
   adminSessions: [],
@@ -258,6 +260,7 @@ function auditFromAlert(entry) {
 function normalizeStore(store) {
   let changed = false;
   store.alertAudits = Array.isArray(store.alertAudits) ? store.alertAudits : [];
+  store.securityEvents = Array.isArray(store.securityEvents) ? store.securityEvents : [];
   const migratedAudits = [];
   store.alerts = (store.alerts || []).map((entry) => {
     const audit = auditFromAlert(entry);
@@ -522,6 +525,7 @@ function pruneStore(store) {
   store.sessions = store.sessions.filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.adminSessions = (store.adminSessions || []).filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.cooldowns = store.cooldowns.filter((entry) => cooldownExpiresAt(entry) > now);
+  store.securityEvents = (store.securityEvents || []).filter((entry) => now - new Date(entry.createdAt).getTime() <= SECURITY_EVENT_TTL_MS);
   store.alertAudits = (store.alertAudits || []).filter((entry) => {
     const retentionUntil = entry.retentionUntil ? new Date(entry.retentionUntil).getTime() : 0;
     return retentionUntil && retentionUntil >= now;
@@ -735,9 +739,35 @@ function registerLoginFailure(store, scope, fingerprint) {
   if (failures >= MAX_LOGIN_FAILURES) {
     clearCooldowns(store, [blockKind], fingerprint);
     pushCooldown(store, blockKind, fingerprint, LOGIN_BLOCK_MS);
-    return LOGIN_BLOCK_MS;
+    return {
+      failures,
+      remainingAttempts: 0,
+      blocked: true,
+      blockMs: LOGIN_BLOCK_MS
+    };
   }
-  return 0;
+  return {
+    failures,
+    remainingAttempts: Math.max(0, MAX_LOGIN_FAILURES - failures),
+    blocked: false,
+    blockMs: 0
+  };
+}
+
+function logSecurityEvent(store, payload) {
+  store.securityEvents = store.securityEvents || [];
+  store.securityEvents.push({
+    id: `security-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
+    createdAt: new Date().toISOString(),
+    ...payload
+  });
+}
+
+function recentSecurityEvents(store, limit = 20) {
+  return (store.securityEvents || [])
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, limit);
 }
 
 function updateUserLocation(store, userId, lat, lng) {
@@ -1158,7 +1188,8 @@ function publicUserForAdmin(user) {
 function adminPayload(store) {
   return {
     companies: store.companies,
-    users: store.users.map(publicUserForAdmin)
+    users: store.users.map(publicUserForAdmin),
+    securityEvents: recentSecurityEvents(store)
   };
 }
 
@@ -1188,7 +1219,8 @@ function analyticsSummary(store) {
       anonymousRatings: store.ratings.length,
       anonymousFunReports: store.funReports.length,
       registeredAlerts: store.alerts.length,
-      temporaryAlertAudits: (store.alertAudits || []).length
+      temporaryAlertAudits: (store.alertAudits || []).length,
+      recentSecurityEvents: recentSecurityEvents(store, 100).length
     },
     beautifulAreas: cells
       .filter((cell) => cell.averageScore <= 2)
@@ -1341,19 +1373,39 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (existingBlock) {
+        logSecurityEvent(store, {
+          kind: 'admin-login-blocked',
+          level: 'warning',
+          scope: 'admin',
+          attemptedCode: code || '(leer)',
+          message: 'Gesperrter Admin-Login erneut versucht'
+        });
+        writeStore(store);
         sendJson(res, 429, {
           error: 'Zu viele Admin-Login-Versuche. Bitte spaeter erneut versuchen.',
-          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(existingBlock) - Date.now()) / 60000))
+          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(existingBlock) - Date.now()) / 60000)),
+          adminNotified: true
         });
         return;
       }
 
       if (code !== ADMIN_CODE || pin !== ADMIN_PIN) {
-        const blockMs = registerLoginFailure(store, 'admin-login', fingerprint);
+        const result = registerLoginFailure(store, 'admin-login', fingerprint);
+        logSecurityEvent(store, {
+          kind: result.blocked ? 'admin-login-block' : 'admin-login-failure',
+          level: result.blocked ? 'critical' : 'warning',
+          scope: 'admin',
+          attemptedCode: code || '(leer)',
+          remainingAttempts: result.remainingAttempts,
+          message: result.blocked ? 'Admin-Login nach Fehlversuchen gesperrt' : 'Falsche Admin-Zugangsdaten eingegeben'
+        });
         writeStore(store);
-        sendJson(res, blockMs ? 429 : 401, {
-          error: blockMs ? 'Zu viele Admin-Login-Versuche. Bitte spaeter erneut versuchen.' : 'Admin-Login fehlgeschlagen',
-          ...(blockMs ? { retryAfterMinutes: Math.max(1, Math.ceil(blockMs / 60000)) } : {})
+        sendJson(res, result.blocked ? 429 : 401, {
+          error: result.blocked ? 'Zu viele Admin-Login-Versuche. Bitte spaeter erneut versuchen.' : 'Admin-Code oder Admin-PIN ist falsch.',
+          remainingAttempts: result.remainingAttempts,
+          maxAttempts: MAX_LOGIN_FAILURES,
+          retryAfterMinutes: result.blocked ? Math.max(1, Math.ceil(result.blockMs / 60000)) : undefined,
+          adminNotified: true
         });
         return;
       }
@@ -1368,6 +1420,13 @@ const server = http.createServer(async (req, res) => {
       writeStore(store);
       sendJson(res, 200, { token, admin: { name: 'Peter Krawitz', role: 'admin' } });
     } catch {
+      logSecurityEvent(store, {
+        kind: 'admin-login-error',
+        level: 'warning',
+        scope: 'admin',
+        message: 'Fehlerhafte Admin-Login-Anfrage'
+      });
+      writeStore(store);
       sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });
     }
     return;
@@ -1621,9 +1680,20 @@ const server = http.createServer(async (req, res) => {
       const existingBlock = activeCooldownEntry(store, 'user-login-block', fingerprint);
 
       if (existingBlock) {
+        logSecurityEvent(store, {
+          kind: 'user-login-blocked',
+          level: 'warning',
+          scope: 'user',
+          attemptedCode: code || '(leer)',
+          message: 'Gesperrter Nutzer-Login erneut versucht'
+        });
+        writeStore(store);
         sendJson(res, 429, {
           error: 'Zu viele Login-Versuche. Bitte spaeter erneut versuchen.',
-          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(existingBlock) - Date.now()) / 60000))
+          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(existingBlock) - Date.now()) / 60000)),
+          remainingAttempts: 0,
+          maxAttempts: MAX_LOGIN_FAILURES,
+          adminNotified: true
         });
         return;
       }
@@ -1631,11 +1701,22 @@ const server = http.createServer(async (req, res) => {
       const user = store.users.find((entry) => entry.code === code && verifyPin(pin, entry.pin));
 
       if (!user) {
-        const blockMs = registerLoginFailure(store, 'user-login', fingerprint);
+        const result = registerLoginFailure(store, 'user-login', fingerprint);
+        logSecurityEvent(store, {
+          kind: result.blocked ? 'user-login-block' : 'user-login-failure',
+          level: result.blocked ? 'critical' : 'warning',
+          scope: 'user',
+          attemptedCode: code || '(leer)',
+          remainingAttempts: result.remainingAttempts,
+          message: result.blocked ? 'Nutzer-Login nach Fehlversuchen gesperrt' : 'Falsche Nutzer-Zugangsdaten eingegeben'
+        });
         writeStore(store);
-        sendJson(res, blockMs ? 429 : 401, {
-          error: blockMs ? 'Zu viele Login-Versuche. Bitte spaeter erneut versuchen.' : 'Login fehlgeschlagen',
-          ...(blockMs ? { retryAfterMinutes: Math.max(1, Math.ceil(blockMs / 60000)) } : {})
+        sendJson(res, result.blocked ? 429 : 401, {
+          error: result.blocked ? 'Zu viele Login-Versuche. Bitte spaeter erneut versuchen.' : 'Login-Code oder PIN ist falsch.',
+          remainingAttempts: result.remainingAttempts,
+          maxAttempts: MAX_LOGIN_FAILURES,
+          retryAfterMinutes: result.blocked ? Math.max(1, Math.ceil(result.blockMs / 60000)) : undefined,
+          adminNotified: true
         });
         return;
       }
@@ -1664,6 +1745,13 @@ const server = http.createServer(async (req, res) => {
         }
       });
     } catch {
+      logSecurityEvent(store, {
+        kind: 'user-login-error',
+        level: 'warning',
+        scope: 'user',
+        message: 'Fehlerhafte Nutzer-Login-Anfrage'
+      });
+      writeStore(store);
       sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });
     }
     return;

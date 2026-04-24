@@ -181,6 +181,11 @@ const texts = {
     alertSent: 'Alarmmeldung wurde ausgelost.',
     alertPoll: 'Neue Alarmmeldung',
     loginFailed: 'Login fehlgeschlagen.',
+    loginWrongData: 'Login-Code oder PIN ist falsch.',
+    loginRemainingAttempts: 'Noch {count} Versuche, dann 15 Minuten gesperrt.',
+    loginRemainingAttemptSingle: 'Noch 1 Versuch, dann 15 Minuten gesperrt.',
+    loginLocked: 'Zu viele falsche Eingaben. Bitte 15 Minuten warten.',
+    loginAdminNotified: 'Der Admin wurde automatisch informiert.',
     police: 'Polizei',
     hospital: 'Krankenhaus',
     mapPopupReports: 'Meldungen',
@@ -345,6 +350,11 @@ const texts = {
     alertSent: 'Alert has been triggered.',
     alertPoll: 'New alert',
     loginFailed: 'Login failed.',
+    loginWrongData: 'Login code or PIN is incorrect.',
+    loginRemainingAttempts: '{count} attempts left before a 15 minute lock.',
+    loginRemainingAttemptSingle: '1 attempt left before a 15 minute lock.',
+    loginLocked: 'Too many wrong entries. Please wait 15 minutes.',
+    loginAdminNotified: 'The admin has been informed automatically.',
     police: 'Police',
     hospital: 'Hospital',
     mapPopupReports: 'Reports',
@@ -689,6 +699,36 @@ function showLocationHelp(message) {
 function hideLocationHelp() {
   if (!locationHelp) return;
   locationHelp.classList.add('hidden');
+}
+
+function loginFeedbackMessage(error) {
+  if (!error) return t('loginFailed');
+  const parts = [];
+  if (error.status === 429) {
+    parts.push(t('loginLocked'));
+  } else if (error.status === 401) {
+    parts.push(t('loginWrongData'));
+  } else {
+    parts.push(errorMessage(error));
+  }
+
+  if (typeof error.remainingAttempts === 'number' && error.remainingAttempts > 0) {
+    parts.push(
+      error.remainingAttempts === 1
+        ? t('loginRemainingAttemptSingle')
+        : t('loginRemainingAttempts').replace('{count}', String(error.remainingAttempts))
+    );
+  }
+
+  if (error.retryAfterMinutes) {
+    parts.push(`${error.retryAfterMinutes} Min.`);
+  }
+
+  if (error.adminNotified) {
+    parts.push(t('loginAdminNotified'));
+  }
+
+  return parts.join(' ');
 }
 
 function showLocationProblem(message) {
@@ -2086,7 +2126,7 @@ async function submitLogin() {
     showStatus(`${t('loggedInAs')} ${payload.user.name}`);
     startPolling();
   } catch (error) {
-    showStatus(t('loginFailed'));
+    showStatus(loginFeedbackMessage(error));
   }
 }
 

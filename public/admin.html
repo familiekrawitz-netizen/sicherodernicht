@@ -57,6 +57,13 @@
           <pre id="adminSummary" class="admin-summary-box"></pre>
         </section>
 
+        <section class="panel-card admin-card">
+          <div class="panel-head">
+            <h2>Sicherheitsmeldungen</h2>
+          </div>
+          <div id="securityEventList" class="admin-list"></div>
+        </section>
+
       <section class="subpage-grid admin-grid">
         <article class="panel-card admin-card">
           <h2>Firma anlegen oder bearbeiten</h2>
@@ -157,6 +164,7 @@
       const userForm = document.getElementById('userForm');
       const companyList = document.getElementById('companyList');
       const userList = document.getElementById('userList');
+      const securityEventList = document.getElementById('securityEventList');
       const userCompany = document.getElementById('userCompany');
       const adminStatus = document.getElementById('adminStatus');
       const adminSummary = document.getElementById('adminSummary');
@@ -176,6 +184,12 @@
 
       function safeHexColor(value, fallback = '#2563eb') {
         return /^#[0-9a-f]{6}$/i.test(String(value || '').trim()) ? String(value).trim() : fallback;
+      }
+
+      function formatEventTime(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '-';
+        return date.toLocaleString('de-DE');
       }
 
       async function api(path, options = {}) {
@@ -201,16 +215,31 @@
         event.preventDefault();
         const code = document.getElementById('adminCode').value.trim();
         const pin = document.getElementById('adminPin').value.trim();
-        const payload = await api('/api/admin/login', {
-          method: 'POST',
-          body: JSON.stringify({ code, pin })
-        });
-        state.token = payload.token;
-        sessionStorage.setItem(ADMIN_TOKEN_KEY, state.token);
-        adminLoginForm.reset();
-        setAuthenticated(true);
-        await loadCatalog();
-        showStatus(`Angemeldet als ${payload.admin?.name || 'Admin'}.`);
+        try {
+          const payload = await api('/api/admin/login', {
+            method: 'POST',
+            body: JSON.stringify({ code, pin })
+          });
+          state.token = payload.token;
+          sessionStorage.setItem(ADMIN_TOKEN_KEY, state.token);
+          adminLoginForm.reset();
+          setAuthenticated(true);
+          await loadCatalog();
+          showStatus(`Angemeldet als ${payload.admin?.name || 'Admin'}.`);
+        } catch (error) {
+          const detail = typeof error.message === 'string' ? error.message : 'Admin-Login fehlgeschlagen';
+          const extra = [];
+          if (typeof error.remainingAttempts === 'number' && error.remainingAttempts > 0) {
+            extra.push(`Noch ${error.remainingAttempts} Versuche, dann 15 Minuten gesperrt.`);
+          }
+          if (error.retryAfterMinutes) {
+            extra.push(`${error.retryAfterMinutes} Min. gesperrt.`);
+          }
+          if (error.adminNotified) {
+            extra.push('Sicherheitsmeldung wurde protokolliert.');
+          }
+          showStatus([detail, ...extra].join(' '));
+        }
       }
 
       async function logoutAdmin() {
@@ -380,12 +409,34 @@
         });
       }
 
+      function renderSecurityEvents() {
+        const events = state.securityEvents || [];
+        if (!events.length) {
+          securityEventList.innerHTML = '<div class="admin-row"><div><strong>Keine aktuellen Sicherheitsmeldungen</strong></div></div>';
+          return;
+        }
+
+        securityEventList.innerHTML = events
+          .map((event) => `
+            <div class="admin-row">
+              <div>
+                <strong>${escapeHtml(event.message || event.kind || 'Sicherheitsmeldung')}</strong><br>
+                <small>${escapeHtml(formatEventTime(event.createdAt))} · ${escapeHtml(event.scope || '-')} · ${escapeHtml(event.level || '-')}</small><br>
+                <small>${event.attemptedCode ? `Login-Code: ${escapeHtml(event.attemptedCode)}` : 'Ohne Login-Code'}</small>
+              </div>
+            </div>
+          `)
+          .join('');
+      }
+
       async function loadCatalog() {
         const payload = await api('/api/admin/catalog');
         state.companies = payload.companies || [];
         state.users = payload.users || [];
+        state.securityEvents = payload.securityEvents || [];
         renderCompanies();
         renderUsers();
+        renderSecurityEvents();
         updateCompanySelectState();
       }
 
@@ -432,7 +483,7 @@
       document.getElementById('exportAllJsonBtn').addEventListener('click', () => exportData('json').catch((error) => showStatus(error.message)));
       document.getElementById('exportAuditCsvBtn').addEventListener('click', () => exportData('csv', 'audit').catch((error) => showStatus(error.message)));
       document.getElementById('exportAuditJsonBtn').addEventListener('click', () => exportData('json', 'audit').catch((error) => showStatus(error.message)));
-      adminLoginForm.addEventListener('submit', (event) => loginAdmin(event).catch((error) => showStatus(error.message)));
+      adminLoginForm.addEventListener('submit', (event) => loginAdmin(event));
 
       setAuthenticated(false);
       requireExistingAdminSession();
