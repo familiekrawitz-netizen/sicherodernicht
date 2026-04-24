@@ -38,6 +38,7 @@ const PUBLIC_RATING_COOLDOWN_MS = 1000 * 60 * 45;
 const FUN_REPORT_COOLDOWN_MS = 1000 * 60 * 15;
 const LOGIN_ATTEMPT_WINDOW_MS = 1000 * 60 * 15;
 const LOGIN_BLOCK_MS = 1000 * 60 * 15;
+const REGISTRATION_SUCCESS_COOLDOWN_MS = 1000 * 60 * 10;
 const MAX_LOGIN_FAILURES = 3;
 const PUBLIC_ALERT_VISIBILITY_MS = 1000 * 60 * 60 * 24;
 const ANTI_SPAM_SALT = 'sicherodernicht-privacy-first-v1';
@@ -272,11 +273,23 @@ function normalizeStore(store) {
   });
   store.alertAudits = [...store.alertAudits, ...migratedAudits];
   store.users = (store.users || []).map((user) => {
-    if (!user.pin || isStoredPinHash(user.pin)) return user;
+    const nextUser = {
+      ...user,
+      email: normalizeEmail(user.email),
+      newsletterOptIn: Boolean(user.newsletterOptIn),
+      newsletterOptInAt: user.newsletterOptInAt || null,
+      createdAt: user.createdAt || null,
+      registrationSource: user.registrationSource || 'admin'
+    };
+    if (nextUser.newsletterOptIn && !nextUser.newsletterOptInAt) {
+      nextUser.newsletterOptInAt = nextUser.createdAt || new Date().toISOString();
+      changed = true;
+    }
+    if (!nextUser.pin || isStoredPinHash(nextUser.pin)) return nextUser;
     changed = true;
     return {
-      ...user,
-      pin: hashPin(user.pin)
+      ...nextUser,
+      pin: hashPin(nextUser.pin)
     };
   });
   pruneStore(store);
@@ -1105,6 +1118,34 @@ function exportRecords(store, type = 'all') {
     retentionUntil: entry.retentionUntil || ''
   }));
 
+  const newsletterContacts = store.users
+    .filter((user) => user.role === 'private' && user.email && user.newsletterOptIn)
+    .map((user) => ({
+      dataset: 'newsletter_contact',
+      id: user.id,
+      createdAt: user.createdAt || '',
+      cellId: '',
+      lat: '',
+      lng: '',
+      score: '',
+      category: 'newsletter',
+      source: user.registrationSource || 'self-service',
+      anonymous: false,
+      reporterId: user.id,
+      reporterName: user.name || '',
+      reporterRole: user.role || '',
+      companyId: '',
+      companyName: '',
+      alertType: '',
+      funTag: '',
+      note: '',
+      alertId: '',
+      retentionUntil: '',
+      email: user.email || '',
+      newsletterOptIn: true,
+      newsletterOptInAt: user.newsletterOptInAt || ''
+    }));
+
   const recordsByType = {
     all: [...publicRatings, ...funReports, ...registeredAlerts],
     public: [...publicRatings, ...funReports],
@@ -1113,7 +1154,8 @@ function exportRecords(store, type = 'all') {
     registered: registeredAlerts,
     alerts: registeredAlerts,
     audit: alertAudits,
-    alertAudits
+    alertAudits,
+    newsletter: newsletterContacts
   };
 
   return recordsByType[type] || recordsByType.all;
@@ -1148,7 +1190,10 @@ function recordsToCsv(records) {
     'funTag',
     'note',
     'alertId',
-    'retentionUntil'
+    'retentionUntil',
+    'email',
+    'newsletterOptIn',
+    'newsletterOptInAt'
   ];
   const rows = records.map((record) => headers.map((header) => csvEscape(record[header])).join(';'));
   return [headers.join(';'), ...rows].join('\n');
@@ -1172,6 +1217,25 @@ function isValidManagedPin(pin) {
   return /^[0-9]{5}[a-zA-Z]{2}$/.test(String(pin || ''));
 }
 
+function normalizeLoginCode(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '');
+}
+
+function isValidLoginCode(code) {
+  return /^[a-z0-9][a-z0-9_-]{2,23}$/.test(String(code || ''));
+}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(email || ''));
+}
+
 function publicUserForAdmin(user) {
   return {
     id: user.id,
@@ -1180,6 +1244,11 @@ function publicUserForAdmin(user) {
     name: user.name,
     companyId: user.companyId,
     companyName: user.companyName,
+    email: user.email || '',
+    newsletterOptIn: Boolean(user.newsletterOptIn),
+    newsletterOptInAt: user.newsletterOptInAt || null,
+    createdAt: user.createdAt || null,
+    registrationSource: user.registrationSource || 'admin',
     lastKnownLocation: user.lastKnownLocation,
     hasPin: Boolean(user.pin)
   };
@@ -1220,7 +1289,8 @@ function analyticsSummary(store) {
       anonymousFunReports: store.funReports.length,
       registeredAlerts: store.alerts.length,
       temporaryAlertAudits: (store.alertAudits || []).length,
-      recentSecurityEvents: recentSecurityEvents(store, 100).length
+      recentSecurityEvents: recentSecurityEvents(store, 100).length,
+      newsletterContacts: store.users.filter((user) => user.role === 'private' && user.email && user.newsletterOptIn).length
     },
     beautifulAreas: cells
       .filter((cell) => cell.averageScore <= 2)
@@ -1517,19 +1587,25 @@ const server = http.createServer(async (req, res) => {
       const parsed = JSON.parse((await readBody(req)) || '{}');
       const id = String(parsed.id || `u-${normalizeIdPart(parsed.role || 'user')}-${Date.now()}`).trim();
       const name = String(parsed.name || '').trim();
-      const code = String(parsed.code || '').trim().toLowerCase();
+      const code = normalizeLoginCode(parsed.code);
       const pin = String(parsed.pin || '').trim();
       const role = parsed.role === 'company' ? 'company' : 'private';
       const companyId = role === 'company' ? String(parsed.companyId || '').trim() : null;
+      const email = normalizeEmail(parsed.email);
+      const newsletterOptIn = role === 'private' && parsed.newsletterOptIn === true && Boolean(email);
       const company = companyId ? store.companies.find((entry) => entry.id === companyId) || null : null;
       const existing = store.users.find((user) => user.id === id);
 
-      if (!name || !code || (!existing && !isValidManagedPin(pin))) {
+      if (!name || !isValidLoginCode(code) || (!existing && !isValidManagedPin(pin))) {
         sendJson(res, 400, { error: 'Nutzer braucht Name, Login-Code und bei Neuanlage eine PIN im Format 00000aa' });
         return;
       }
       if (existing && pin && !isValidManagedPin(pin)) {
         sendJson(res, 400, { error: 'Neue PIN muss im Format 00000aa angegeben werden' });
+        return;
+      }
+      if (email && !isValidEmail(email)) {
+        sendJson(res, 400, { error: 'E-Mail-Adresse ist ungueltig' });
         return;
       }
       if (role === 'company' && !company) {
@@ -1540,6 +1616,10 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 409, { error: 'Login-Code ist bereits vergeben' });
         return;
       }
+      if (email && store.users.some((user) => normalizeEmail(user.email) === email && user.id !== id)) {
+        sendJson(res, 409, { error: 'E-Mail-Adresse ist bereits vergeben' });
+        return;
+      }
 
       const user = {
         id,
@@ -1547,6 +1627,11 @@ const server = http.createServer(async (req, res) => {
         pin: pin ? hashPin(pin) : existing?.pin || '',
         role,
         name,
+        email: role === 'private' ? email : '',
+        newsletterOptIn,
+        newsletterOptInAt: newsletterOptIn ? (existing?.newsletterOptInAt || new Date().toISOString()) : null,
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        registrationSource: existing?.registrationSource || 'admin',
         companyId: role === 'company' ? company.id : null,
         companyName: role === 'company' ? company.name : null,
         lastKnownLocation: existing?.lastKnownLocation || null
@@ -1750,6 +1835,159 @@ const server = http.createServer(async (req, res) => {
         level: 'warning',
         scope: 'user',
         message: 'Fehlerhafte Nutzer-Login-Anfrage'
+      });
+      writeStore(store);
+      sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/auth/register' && req.method === 'POST') {
+    try {
+      const parsed = JSON.parse((await readBody(req)) || '{}');
+      const name = String(parsed.name || '').trim();
+      const code = normalizeLoginCode(parsed.code);
+      const pin = String(parsed.pin || '').trim();
+      const email = normalizeEmail(parsed.email);
+      const newsletterOptIn = parsed.newsletterOptIn === true;
+      const fingerprint = requestFingerprint(req, 'private-register', `${code}|${email}`);
+      const existingBlock = activeCooldownEntry(store, 'private-register-block', fingerprint);
+
+      if (existingBlock) {
+        logSecurityEvent(store, {
+          kind: 'private-register-blocked',
+          level: 'warning',
+          scope: 'registration',
+          attemptedCode: code || '(leer)',
+          message: 'Gesperrte Privat-Registrierung erneut versucht'
+        });
+        writeStore(store);
+        sendJson(res, 429, {
+          error: 'Zu viele Registrierungsversuche. Bitte spaeter erneut versuchen.',
+          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(existingBlock) - Date.now()) / 60000))
+        });
+        return;
+      }
+
+      const activeSuccessCooldown = activeCooldownEntry(store, 'private-register-success', fingerprint);
+      if (activeSuccessCooldown) {
+        sendJson(res, 429, {
+          error: 'Bitte warte kurz, bevor du ein weiteres Privatkonto auf diesem Geraet anlegst.',
+          retryAfterMinutes: Math.max(1, Math.ceil((cooldownExpiresAt(activeSuccessCooldown) - Date.now()) / 60000))
+        });
+        return;
+      }
+
+      if (!name || !isValidLoginCode(code) || !isValidManagedPin(pin)) {
+        const result = registerLoginFailure(store, 'private-register', fingerprint);
+        logSecurityEvent(store, {
+          kind: result.blocked ? 'private-register-block' : 'private-register-invalid',
+          level: result.blocked ? 'critical' : 'warning',
+          scope: 'registration',
+          attemptedCode: code || '(leer)',
+          remainingAttempts: result.remainingAttempts,
+          message: result.blocked ? 'Privat-Registrierung nach Fehlversuchen gesperrt' : 'Privat-Registrierung mit unvollstaendigen Daten'
+        });
+        writeStore(store);
+        sendJson(res, result.blocked ? 429 : 400, {
+          error: 'Bitte Name, gueltigen Login-Code und PIN im Format 00000aa angeben.',
+          remainingAttempts: result.remainingAttempts,
+          maxAttempts: MAX_LOGIN_FAILURES,
+          retryAfterMinutes: result.blocked ? Math.max(1, Math.ceil(result.blockMs / 60000)) : undefined
+        });
+        return;
+      }
+
+      if (email && !isValidEmail(email)) {
+        const result = registerLoginFailure(store, 'private-register', fingerprint);
+        logSecurityEvent(store, {
+          kind: result.blocked ? 'private-register-block' : 'private-register-email-invalid',
+          level: result.blocked ? 'critical' : 'warning',
+          scope: 'registration',
+          attemptedCode: code || '(leer)',
+          remainingAttempts: result.remainingAttempts,
+          message: result.blocked ? 'Privat-Registrierung nach falscher E-Mail-Eingabe gesperrt' : 'Privat-Registrierung mit ungueltiger E-Mail'
+        });
+        writeStore(store);
+        sendJson(res, result.blocked ? 429 : 400, {
+          error: 'Bitte eine gueltige E-Mail-Adresse angeben.',
+          remainingAttempts: result.remainingAttempts,
+          maxAttempts: MAX_LOGIN_FAILURES,
+          retryAfterMinutes: result.blocked ? Math.max(1, Math.ceil(result.blockMs / 60000)) : undefined
+        });
+        return;
+      }
+
+      if (newsletterOptIn && !email) {
+        sendJson(res, 400, { error: 'Fuer Neuigkeiten per E-Mail wird eine E-Mail-Adresse benoetigt.' });
+        return;
+      }
+
+      if (store.users.some((user) => user.code === code)) {
+        sendJson(res, 409, { error: 'Dieser Login-Code ist bereits vergeben.' });
+        return;
+      }
+
+      if (email && store.users.some((user) => normalizeEmail(user.email) === email)) {
+        sendJson(res, 409, { error: 'Diese E-Mail-Adresse ist bereits registriert.' });
+        return;
+      }
+
+      clearCooldowns(store, ['private-register-failure', 'private-register-block'], fingerprint);
+
+      const user = {
+        id: `u-private-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
+        code,
+        pin: hashPin(pin),
+        role: 'private',
+        name,
+        email,
+        newsletterOptIn,
+        newsletterOptInAt: newsletterOptIn ? new Date().toISOString() : null,
+        createdAt: new Date().toISOString(),
+        registrationSource: 'self-service',
+        companyId: null,
+        companyName: null,
+        lastKnownLocation: null
+      };
+
+      const token = createToken();
+      store.users.push(user);
+      store.sessions.push({
+        token,
+        userId: user.id,
+        createdAt: new Date().toISOString()
+      });
+      pushCooldown(store, 'private-register-success', fingerprint, REGISTRATION_SUCCESS_COOLDOWN_MS);
+      logSecurityEvent(store, {
+        kind: 'private-register-success',
+        level: 'info',
+        scope: 'registration',
+        attemptedCode: code,
+        message: newsletterOptIn ? 'Neuer Privatnutzer mit Newsletter-Einwilligung registriert' : 'Neuer Privatnutzer registriert'
+      });
+
+      writeStore(store);
+      sendJson(res, 201, {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          companyId: null,
+          companyName: null
+        },
+        registration: {
+          email: user.email,
+          newsletterOptIn: user.newsletterOptIn
+        }
+      });
+    } catch {
+      logSecurityEvent(store, {
+        kind: 'private-register-error',
+        level: 'warning',
+        scope: 'registration',
+        message: 'Fehlerhafte Registrierungsanfrage'
       });
       writeStore(store);
       sendJson(res, 400, { error: 'JSON konnte nicht gelesen werden' });

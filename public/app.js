@@ -48,7 +48,8 @@ const state = {
   currentAlertIndex: -1,
   companyDangerView: false,
   ratingLocks: {},
-  shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('sicherodernicht-share-company-location') !== 'off' : true
+  shareCompanyLocation: hasComfortConsent() ? localStorage.getItem('sicherodernicht-share-company-location') !== 'off' : true,
+  loginMode: 'login'
 };
 
 const texts = {
@@ -130,15 +131,28 @@ const texts = {
     nearestExcellent: 'Nächstes Top-Gebiet',
     nearestPolice: 'Nächste Polizeiwache',
     nearestHospital: 'Nächstes Krankenhaus',
-    loginIntro: 'Demo-Login fur Privat und Unternehmen. Rollen steuern, welche Sicherheitsfunktionen sichtbar sind.',
+    loginIntro: 'Login fur Privat- und Firmennutzer. Privatkonten konnen hier auch direkt neu angelegt werden.',
     privateAccess: 'Privatzugang',
     companyAccess: 'Firmenzugang',
-    privateDemo: 'Privatzugang: Daten werden vom Admin vergeben.',
+    privateDemo: 'Privatzugang: direkt registrieren oder vorhandene Zugangsdaten nutzen.',
     companyDemo: 'Firmenzugang: Daten werden vom Admin vergeben.',
     loginCode: 'Login-Code',
     loginPin: 'PIN',
     loginSubmit: 'Einloggen',
     rememberLogin: 'Login-Code auf diesem Gerät merken',
+    loginTab: 'Login',
+    registerTab: 'Privat registrieren',
+    registerIntro: 'Privatkonto in wenigen Schritten anlegen. Firmenzugänge werden weiterhin vom Admin vergeben.',
+    registerName: 'Name',
+    registerCode: 'Eigener Login-Code',
+    registerCodeHint: '3 bis 24 Zeichen: Buchstaben, Zahlen, _ oder -',
+    registerPin: 'Eigene PIN',
+    registerPinHint: 'Format: 5 Ziffern und 2 Buchstaben, z. B. 12345ab',
+    registerEmail: 'E-Mail (optional)',
+    registerEmailHint: 'Nur nötig, wenn du Neuigkeiten per E-Mail möchtest.',
+    registerNewsletter: 'Ich möchte per E-Mail über Neuigkeiten informiert werden.',
+    registerSubmit: 'Privatkonto anlegen',
+    registerSuccess: 'Privatkonto angelegt. Du bist jetzt eingeloggt.',
     loggedInAs: 'Angemeldet als',
     alertButton: 'Alarmmeldung 6 senden',
     dangerButton: 'aktuelle Gefahr',
@@ -299,15 +313,28 @@ const texts = {
     nearestExcellent: 'Next top-rated area',
     nearestPolice: 'Nearest police station',
     nearestHospital: 'Nearest hospital',
-    loginIntro: 'Demo login for private and company users. Roles decide which safety controls become visible.',
+    loginIntro: 'Login for private and company users. Private accounts can also be created here directly.',
     privateAccess: 'Private access',
     companyAccess: 'Company access',
-    privateDemo: 'Private access: credentials are assigned by the admin.',
+    privateDemo: 'Private access: register directly or use existing credentials.',
     companyDemo: 'Company access: credentials are assigned by the admin.',
     loginCode: 'Login code',
     loginPin: 'PIN',
     loginSubmit: 'Log in',
     rememberLogin: 'Remember login code on this device',
+    loginTab: 'Log in',
+    registerTab: 'Private sign-up',
+    registerIntro: 'Create a private account in a few steps. Company access is still assigned by the admin.',
+    registerName: 'Name',
+    registerCode: 'Your login code',
+    registerCodeHint: '3 to 24 chars: letters, numbers, _ or -',
+    registerPin: 'Your PIN',
+    registerPinHint: 'Format: 5 digits and 2 letters, e.g. 12345ab',
+    registerEmail: 'Email (optional)',
+    registerEmailHint: 'Only needed if you want updates by email.',
+    registerNewsletter: 'I want to receive updates by email.',
+    registerSubmit: 'Create private account',
+    registerSuccess: 'Private account created. You are now logged in.',
     loggedInAs: 'Logged in as',
     alertButton: 'Send alert 6',
     dangerButton: 'current danger',
@@ -1273,20 +1300,62 @@ function renderLoginPopover() {
   const hasSavedLogin = Boolean(savedCode);
 
   loginPopover.innerHTML = `
-    <div class="login-grid">
-      <input id="loginCode" placeholder="${t('loginCode')}" autocomplete="username" value="${savedCode}" />
-      <input id="loginPin" placeholder="${t('loginPin')}" autocomplete="current-password" inputmode="text" />
-      <label class="remember-login">
-        <input id="rememberLogin" type="checkbox" ${hasSavedLogin ? 'checked' : ''} />
-        <span>${t('rememberLogin')}</span>
-      </label>
-      <button id="loginSubmit" class="primary-button" type="button">${t('loginSubmit')}</button>
+    <p class="login-register-intro">${t('loginIntro')}</p>
+    <div class="login-mode-switch" role="tablist" aria-label="Login oder Registrierung">
+      <button id="loginModeLogin" class="login-mode-tab ${state.loginMode === 'login' ? 'is-active' : ''}" type="button">${t('loginTab')}</button>
+      <button id="loginModeRegister" class="login-mode-tab ${state.loginMode === 'register' ? 'is-active' : ''}" type="button">${t('registerTab')}</button>
+    </div>
+    <div class="login-mode-panel ${state.loginMode === 'login' ? '' : 'hidden'}" id="loginModePanel">
+      <div class="login-grid">
+        <input id="loginCode" placeholder="${t('loginCode')}" autocomplete="username" value="${savedCode}" />
+        <input id="loginPin" placeholder="${t('loginPin')}" autocomplete="current-password" inputmode="text" />
+        <label class="remember-login">
+          <input id="rememberLogin" type="checkbox" ${hasSavedLogin ? 'checked' : ''} />
+          <span>${t('rememberLogin')}</span>
+        </label>
+        <button id="loginSubmit" class="primary-button" type="button">${t('loginSubmit')}</button>
+      </div>
+    </div>
+    <div class="login-mode-panel ${state.loginMode === 'register' ? '' : 'hidden'}" id="registerModePanel">
+      <p class="login-register-intro">${t('registerIntro')}</p>
+      <div class="login-grid">
+        <input id="registerName" placeholder="${t('registerName')}" autocomplete="name" />
+        <input id="registerCode" placeholder="${t('registerCode')}" autocomplete="username" autocapitalize="off" spellcheck="false" />
+        <small class="login-field-hint">${t('registerCodeHint')}</small>
+        <input id="registerPin" placeholder="${t('registerPin')}" inputmode="text" autocapitalize="off" spellcheck="false" />
+        <small class="login-field-hint">${t('registerPinHint')}</small>
+        <input id="registerEmail" placeholder="${t('registerEmail')}" autocomplete="email" inputmode="email" />
+        <small class="login-field-hint">${t('registerEmailHint')}</small>
+        <label class="remember-login newsletter-optin">
+          <input id="registerNewsletter" type="checkbox" />
+          <span>${t('registerNewsletter')}</span>
+        </label>
+        <button id="registerSubmit" class="primary-button" type="button">${t('registerSubmit')}</button>
+      </div>
     </div>
   `;
 
   const submit = document.getElementById('loginSubmit');
   if (submit) {
     submit.addEventListener('click', submitLogin);
+  }
+  const registerSubmit = document.getElementById('registerSubmit');
+  if (registerSubmit) {
+    registerSubmit.addEventListener('click', submitRegistration);
+  }
+  const loginModeButton = document.getElementById('loginModeLogin');
+  if (loginModeButton) {
+    loginModeButton.addEventListener('click', () => {
+      state.loginMode = 'login';
+      renderLoginPopover();
+    });
+  }
+  const registerModeButton = document.getElementById('loginModeRegister');
+  if (registerModeButton) {
+    registerModeButton.addEventListener('click', () => {
+      state.loginMode = 'register';
+      renderLoginPopover();
+    });
   }
 }
 
@@ -2127,6 +2196,42 @@ async function submitLogin() {
     startPolling();
   } catch (error) {
     showStatus(loginFeedbackMessage(error));
+  }
+}
+
+async function submitRegistration() {
+  const nameInput = document.getElementById('registerName');
+  const codeInput = document.getElementById('registerCode');
+  const pinInput = document.getElementById('registerPin');
+  const emailInput = document.getElementById('registerEmail');
+  const newsletterInput = document.getElementById('registerNewsletter');
+  const name = nameInput ? nameInput.value.trim() : '';
+  const code = codeInput ? codeInput.value.trim().toLowerCase() : '';
+  const pin = pinInput ? pinInput.value.trim() : '';
+  const email = emailInput ? emailInput.value.trim() : '';
+  const newsletterOptIn = Boolean(newsletterInput && newsletterInput.checked);
+
+  try {
+    const payload = await api('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        code,
+        pin,
+        email,
+        newsletterOptIn
+      })
+    });
+    state.token = payload.token;
+    state.loginMode = 'login';
+    sessionStorage.setItem('sicherodernicht-token', state.token);
+    localStorage.removeItem('sicherodernicht-token');
+    await loadProfile();
+    loginPopover.classList.add('hidden');
+    showStatus(t('registerSuccess'));
+    startPolling();
+  } catch (error) {
+    showStatus(errorMessage(error));
   }
 }
 
