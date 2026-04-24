@@ -839,10 +839,10 @@ button:disabled:active,
   position: absolute;
   inset: 0;
   overflow: hidden;
-  color: #8b3f2b;
+  color: transparent;
   clip-path: inset(0 100% 0 0);
-  text-shadow: 0 0 6px rgba(139, 63, 43, 0.34), 0 0 18px rgba(127, 29, 29, 0.18);
-  animation: securityScannerReveal 5.8s cubic-bezier(0.2, 0.8, 0.22, 1) infinite;
+  text-shadow: none;
+  animation: none;
 }
 
 .security-scan-title::after {
