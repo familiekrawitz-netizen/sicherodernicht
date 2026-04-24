@@ -143,6 +143,7 @@ const texts = {
     alertButton: 'Alarmmeldung 6 senden',
     dangerButton: 'aktuelle Gefahr',
     dangerOnly: 'Nur für registrierte Nutzer',
+    dangerCallout: 'Bei Gefahr immer zuerst <strong>Polizei Tel.: 110</strong> oder <strong>Feuerwehr Tel.: 112</strong> anrufen!',
     dangerRegistrationHint: 'Registrierung erforderlich',
     emergencyRegistrationHint: 'Firmennutzer-Registrierung erforderlich',
     companyOnlyEmergency: 'Notfall ist nur für registrierte Firmennutzer aktiv.',
@@ -306,6 +307,7 @@ const texts = {
     alertButton: 'Send alert 6',
     dangerButton: 'current danger',
     dangerOnly: 'Registered users only',
+    dangerCallout: 'In danger, always call <strong>police: 110</strong> or <strong>fire brigade: 112</strong> first!',
     dangerRegistrationHint: 'Registration required',
     emergencyRegistrationHint: 'Company registration required',
     companyOnlyEmergency: 'Emergency is only active for registered company users.',
@@ -818,7 +820,12 @@ function pointBetween(start, end, fraction) {
 function updateTranslations() {
   document.documentElement.lang = state.language;
   document.querySelectorAll('[data-i18n]').forEach((node) => {
-    node.textContent = t(node.dataset.i18n);
+    const value = t(node.dataset.i18n);
+    if (node.dataset.i18n === 'dangerCallout') {
+      node.innerHTML = value;
+      return;
+    }
+    node.textContent = value;
   });
   applyUserMode();
   updateLocationDisclosure();
