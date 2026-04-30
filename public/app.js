@@ -62,6 +62,7 @@ const texts = {
     locateActionHint: 'freigeben · zentrieren · anzeigen',
     locationDisclosureDefault: 'Standort wird erst nach deinem Tippen abgefragt. Er wird zum Zentrieren, Anzeigen und Bewerten deiner Umgebung genutzt.',
     locationDisclosureCompany: 'Firmenmodus: Wenn „Meinen Standort teilen“ aktiv ist, wird dein gerundeter Standort an den Server gesendet und Teammitgliedern deiner Firma angezeigt. Du kannst das Teilen jederzeit ausschalten.',
+    offlineNotice: 'Offline: Karten, aktuelle Bewertungen und Warnmeldungen können eingeschränkt sein.',
     todayMode: 'Heute',
     thisWeek: 'Diese Woche',
     thisMonth: 'Dieser Monat',
@@ -247,6 +248,7 @@ const texts = {
     locateActionHint: 'allow · center · show',
     locationDisclosureDefault: 'Location is requested only after you tap. It is used to center, show and rate your surroundings.',
     locationDisclosureCompany: 'Company mode: If “Share my location” is active, your rounded location is sent to the server and shown to team members in your company. You can turn sharing off at any time.',
+    offlineNotice: 'Offline: Maps, current ratings and alerts may be limited.',
     todayMode: 'Today',
     thisWeek: 'This week',
     thisMonth: 'This month',
@@ -483,6 +485,7 @@ const loginPopover = document.getElementById('loginPopover');
 const registeredPanel = document.getElementById('registeredPanel');
 const locateBtn = document.getElementById('locateBtn');
 const locationDisclosure = document.getElementById('locationDisclosure');
+const offlineNotice = document.getElementById('offlineNotice');
 const currentAlertsBtn = document.getElementById('currentAlertsBtn');
 const mainDangerBtn = document.getElementById('mainDangerBtn');
 const funToggle = document.getElementById('funToggle');
@@ -734,6 +737,20 @@ function hideLocationHelp() {
   locationHelp.classList.add('hidden');
 }
 
+function updateOfflineNotice() {
+  if (!offlineNotice) return;
+  offlineNotice.classList.toggle('hidden', navigator.onLine !== false);
+}
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch((error) => {
+      console.warn('Service Worker konnte nicht registriert werden.', error);
+    });
+  });
+}
+
 function loginFeedbackMessage(error) {
   if (!error) return t('loginFailed');
   const parts = [];
@@ -921,6 +938,7 @@ function updateTranslations() {
   renderReportTicker();
   renderCompanyTicker();
   renderAreaSummary();
+  updateOfflineNotice();
 }
 
 function updateSecurityInviteState() {
@@ -2626,10 +2644,13 @@ window.addEventListener('resize', () => {
 });
 
 window.addEventListener('orientationchange', refreshMapSize);
+window.addEventListener('online', updateOfflineNotice);
+window.addEventListener('offline', updateOfflineNotice);
 
 window.addEventListener('pagehide', logoutOnAppClose);
 
 installTouchButtonFallback();
+registerServiceWorker();
 
 languageToggle.addEventListener('click', toggleLanguage);
 cookieSettingsBtn.addEventListener('click', () => showConsentBanner(true));
@@ -2653,6 +2674,7 @@ loginButton.addEventListener('click', handleLoginButton);
 async function bootstrap() {
   refreshMapSize();
   showConsentBanner();
+  updateOfflineNotice();
   const bootstrapData = await api('/api/bootstrap');
   state.mapData = { companies: bootstrapData.companies, emergencyPlaces: bootstrapData.emergencyPlaces, cells: [], alerts: [], funReports: [] };
   updateTranslations();

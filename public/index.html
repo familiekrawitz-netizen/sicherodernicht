@@ -4,13 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="sicherodernicht" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#102033" />
     <title>sicherodernicht</title>
-    <link rel="manifest" href="/manifest.json?v=48" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
     <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="/styles.css?v=97" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="design-friendly">
     <div class="shell">
@@ -50,6 +51,9 @@
             <p id="locationDisclosure" class="location-disclosure">
               Standort wird erst nach deinem Tippen abgefragt. Er wird zum Zentrieren, Anzeigen und Bewerten deiner Umgebung genutzt.
             </p>
+            <div id="offlineNotice" class="offline-notice hidden" data-i18n="offlineNotice" aria-live="polite">
+              Offline: Karten, aktuelle Bewertungen und Warnmeldungen können eingeschränkt sein.
+            </div>
 
             <section class="map-panel compact-map">
               <div id="alertStrip" class="alert-strip hidden"></div>
@@ -196,19 +200,6 @@
     </section>
 
     <script src="/vendor/leaflet/leaflet.js"></script>
-    <script src="/app.js?v=106"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-            navigator.serviceWorker.getRegistrations().then((registrations) => {
-              registrations.forEach((registration) => registration.unregister());
-            });
-            return;
-          }
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
-      }
-    </script>
+    <script src="/app.js"></script>
   </body>
 </html>
