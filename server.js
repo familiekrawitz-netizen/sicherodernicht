@@ -30,7 +30,10 @@ const COMPANY_ALERT_TYPES = ['gun', 'knife', 'violence', 'mob'];
 const FUN_TAGS = ['first_kiss', 'sport_success', 'best_recovery', 'kind_people', 'interesting_area'];
 const PUBLIC_SCORES = [1, 2, 3, 4, 5];
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 12;
-const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const COMPANY_LOCATION_TTL_MS = 1000 * 60 * 60 * 4;
+const PUBLIC_RATING_TTL_MS = 1000 * 60 * 60 * 24 * 365 * 2;
+const FUN_REPORT_TTL_MS = 1000 * 60 * 60 * 24 * 365;
+const ALERT_TTL_MS = 1000 * 60 * 60 * 24 * 365;
 const PRIVATE_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const COMPANY_ALERT_AUDIT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SECURITY_EVENT_TTL_MS = 1000 * 60 * 60 * 24 * 30;
@@ -47,6 +50,12 @@ const ADMIN_PIN = String(process.env.ADMIN_PIN || '').trim();
 const TEST_ACCESS_CODE = String(process.env.TEST_ACCESS_CODE || '').trim();
 const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || '').trim().replace(/\/+$/, '');
 const NEWSLETTER_FROM_EMAIL = normalizeEmail(process.env.NEWSLETTER_FROM_EMAIL || '');
+const ALLOWED_ORIGINS = new Set(
+  String(process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+);
 const TEST_ACCESS_COOKIE = 'sicherodernicht_test_access';
 const TEST_ACCESS_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 
@@ -310,37 +319,39 @@ function normalizeStore(store) {
   return store;
 }
 
+function allowedOriginForRequest(res) {
+  const origin = String(res?.__originHeader || '').trim();
+  if (!origin) return '';
+  return ALLOWED_ORIGINS.has(origin) ? origin : '';
+}
+
+function responseSecurityHeaders(res, contentType) {
+  const headers = {
+    'Content-Type': contentType,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Frame-Options': 'DENY',
+    'Permissions-Policy': 'geolocation=(self)'
+  };
+  const allowedOrigin = allowedOriginForRequest(res);
+  if (allowedOrigin) {
+    headers['Access-Control-Allow-Origin'] = allowedOrigin;
+    headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS';
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+    headers.Vary = 'Origin';
+  }
+  return headers;
+}
+
 function sendJson(res, statusCode, payload) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Permissions-Policy': 'geolocation=(self)',
-    'Cache-Control': 'no-store'
-  });
+  res.writeHead(statusCode, responseSecurityHeaders(res, 'application/json; charset=utf-8'));
   res.end(JSON.stringify(payload));
 }
 
 function sendText(res, statusCode, payload, contentType = 'text/plain; charset=utf-8') {
-  res.writeHead(statusCode, {
-    'Content-Type': contentType,
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Permissions-Policy': 'geolocation=(self)',
-    'Cache-Control': 'no-store'
-  });
+  res.writeHead(statusCode, responseSecurityHeaders(res, contentType));
   res.end(payload);
-}
-
-function sendText(res, statusCode, text) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'text/plain; charset=utf-8',
-    'Permissions-Policy': 'geolocation=(self)',
-    'Cache-Control': 'no-store'
-  });
-  res.end(text);
 }
 
 function parseCookies(req) {
@@ -376,11 +387,7 @@ function wantsHtml(req, url) {
 }
 
 function sendTestAccessPage(res) {
-  res.writeHead(200, {
-    'Content-Type': 'text/html; charset=utf-8',
-    'Permissions-Policy': 'geolocation=(self)',
-    'Cache-Control': 'no-store'
-  });
+  res.writeHead(200, responseSecurityHeaders(res, 'text/html; charset=utf-8'));
   res.end(`<!doctype html>
 <html lang="de">
 <head>
@@ -450,8 +457,7 @@ async function handleTestAccess(req, res) {
       return;
     }
     res.writeHead(200, {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
+      ...responseSecurityHeaders(res, 'application/json; charset=utf-8'),
       'Set-Cookie': testAccessCookie(req)
     });
     res.end(JSON.stringify({ ok: true }));
@@ -501,10 +507,7 @@ function serveStatic(req, res) {
       '.svg': 'image/svg+xml'
     };
 
-    res.writeHead(200, {
-      'Content-Type': types[ext] || 'application/octet-stream',
-      'Permissions-Policy': 'geolocation=(self)'
-    });
+    res.writeHead(200, responseSecurityHeaders(res, types[ext] || 'application/octet-stream'));
     res.end(content);
   });
 }
@@ -546,7 +549,10 @@ function isFiniteLatLng(lat, lng) {
 
 function pruneStore(store) {
   const now = Date.now();
-  store.sessions = store.sessions.filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
+  store.ratings = (Array.isArray(store.ratings) ? store.ratings : []).filter((entry) => now - new Date(entry.createdAt).getTime() <= PUBLIC_RATING_TTL_MS);
+  store.funReports = (Array.isArray(store.funReports) ? store.funReports : []).filter((entry) => now - new Date(entry.createdAt).getTime() <= FUN_REPORT_TTL_MS);
+  store.alerts = (Array.isArray(store.alerts) ? store.alerts : []).filter((entry) => now - new Date(entry.createdAt).getTime() <= ALERT_TTL_MS);
+  store.sessions = (Array.isArray(store.sessions) ? store.sessions : []).filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.adminSessions = (store.adminSessions || []).filter((session) => now - new Date(session.createdAt).getTime() <= TOKEN_TTL_MS);
   store.cooldowns = store.cooldowns.filter((entry) => cooldownExpiresAt(entry) > now);
   store.securityEvents = (store.securityEvents || []).filter((entry) => now - new Date(entry.createdAt).getTime() <= SECURITY_EVENT_TTL_MS);
@@ -554,7 +560,7 @@ function pruneStore(store) {
     const retentionUntil = entry.retentionUntil ? new Date(entry.retentionUntil).getTime() : 0;
     return retentionUntil && retentionUntil >= now;
   });
-  store.users = store.users.map((user) => {
+  store.users = (Array.isArray(store.users) ? store.users : []).map((user) => {
     if (user.role !== 'company' && user.lastKnownLocation) {
       return { ...user, lastKnownLocation: null };
     }
@@ -1390,12 +1396,15 @@ function analyticsSummary(store) {
 ensureFiles();
 
 const server = http.createServer(async (req, res) => {
+  res.__originHeader = req.headers.origin || '';
+
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    });
+    const headers = responseSecurityHeaders(res, 'text/plain; charset=utf-8');
+    if (headers['Access-Control-Allow-Origin']) {
+      headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS';
+      headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+    }
+    res.writeHead(204, headers);
     res.end();
     return;
   }

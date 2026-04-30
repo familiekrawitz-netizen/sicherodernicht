@@ -9,7 +9,7 @@ Der aktuelle Stand ist ein lokaler Prototyp.
 
 - Lokale JSON-Datei data/store.json durch eine echte Datenbank ersetzen.
 - Empfohlen: PostgreSQL.
-- Tabellen fuer anonyme Bewertungen, Fun-Meldungen, registrierte Alarmmeldungen, Nutzer, Firmen, Sessions und Audit-Logs anlegen.
+- Tabellen fuer oeffentliche Bewertungen 1 bis 5, Fun-Meldungen, Warnmeldungen / Alarmmeldungen Stufe 6, Nutzer, Firmen, Sessions und Audit-Logs anlegen.
 - Migration der bisherigen Daten aus data/store.json vorbereiten.
 - Backups einrichten.
 - Wiederherstellung aus Backup testen.
@@ -19,9 +19,9 @@ Der aktuelle Stand ist ein lokaler Prototyp.
 
 - Endgueltiges Datenschutzkonzept erstellen.
 - Pruefen, welche Daten dauerhaft gespeichert werden duerfen.
-- Oeffentliche anonyme Meldungen dauerhaft lagebildfaehig speichern.
+- Oeffentliche Bewertungen 1 bis 5 und Fun-Meldungen lagebildfaehig speichern.
 - Personenbezogene Daten registrierter Nutzer nur zweckgebunden speichern.
-- Speicherdauer fuer Nutzerkonten, Sessions, Standortdaten und Alarmmeldungen festlegen.
+- Speicherdauer fuer Nutzerkonten, Sessions, Standortdaten sowie Warnmeldungen / Alarmmeldungen Stufe 6 festlegen.
 - Loeschkonzept fuer Nutzerkonten und personenbezogene Daten ergaenzen.
 - Betroffenenrechte technisch abbilden: Auskunft, Berichtigung, Loeschung, Export.
 - Impressum und Datenschutzerklaerung mit echten Betreiberangaben ausfuellen.
@@ -116,7 +116,7 @@ Der aktuelle Stand ist ein lokaler Prototyp.
 - Echte Betreiberangaben im Impressum eintragen.
 - Datenschutzerklaerung finalisieren.
 - Nutzungsbedingungen erstellen.
-- Haftungsausschluss fuer Bewertungen und Alarmmeldungen formulieren.
+- Haftungsausschluss fuer oeffentliche Bewertungen 1 bis 5 und Warnmeldungen / Alarmmeldungen Stufe 6 formulieren.
 - Klarstellen, dass die App keinen Notruf ersetzt.
 - Hinweis auf 110 bei akuter Gefahr beibehalten.
 - Moderations- und Meldeprozess fuer falsche Inhalte entwickeln.

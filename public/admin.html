@@ -15,12 +15,12 @@
         <p class="chip">Geschützte Verwaltung</p>
         <h1>Adminbereich</h1>
         <p>
-          Diese Seite ist für Export, Datenbankübersicht, Firmenverwaltung und registrierte Nutzer vorgesehen.
-          Änderungen sind nur nach Admin-Login möglich.
+          Diese Seite ist für den geschlossenen Testbetrieb vorgesehen. Sie bündelt Prüf-, Export- und
+          Verwaltungsfunktionen, ist aber nicht als endgültige Produktiv-Adminlösung gedacht.
         </p>
         <div class="legal-note">
-          Admin-Zugang für die Testphase: eigener Admin-Code und PIN. Im Echtbetrieb bitte über sichere
-          Umgebungsvariablen und später idealerweise mit Zwei-Faktor-Schutz betreiben.
+          Für den Echtbetrieb sollten Admin-Funktionen in eine separate, stärker abgesicherte Verwaltungsumgebung mit
+          rollenbasierter Freigabe und zusätzlichem Schutz überführt werden.
         </div>
       </section>
 
@@ -47,6 +47,10 @@
             <h2>Datenbank & Export</h2>
             <button id="adminLogoutBtn" class="ghost-button tiny" type="button">Admin-Logout</button>
           </div>
+          <p class="legal-note">
+            Die folgenden Funktionen dienen dem geschlossenen Testbetrieb. Vor einem öffentlichen Livebetrieb sollten
+            Export- und Verwaltungsrechte weiter eingeschränkt und separat abgesichert werden.
+          </p>
           <div class="admin-actions admin-export-actions">
             <button id="exportAllCsvBtn" class="primary-button" type="button">Alles als CSV exportieren</button>
             <button id="exportAllJsonBtn" class="ghost-button" type="button">Alles als JSON anzeigen</button>
@@ -62,6 +66,10 @@
           <div class="panel-head">
             <h2>Sicherheitsmeldungen</h2>
           </div>
+          <p class="legal-note">
+            Angezeigt werden protokollierte Sicherheitsereignisse aus dem Testbetrieb, damit missbräuchliche oder
+            fehlerhafte Zugriffsversuche nachvollzogen werden können.
+          </p>
           <div id="securityEventList" class="admin-list"></div>
         </section>
 

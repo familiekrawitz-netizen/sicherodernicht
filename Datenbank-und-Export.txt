@@ -5,14 +5,14 @@ Aktueller lokaler Datenspeicher:
 
 Wichtig:
 
-- Anonyme oeffentliche Bewertungen werden dauerhaft gespeichert.
-- Anonyme Fun-Meldungen werden dauerhaft gespeichert.
-- Registrierte Alarmmeldungen werden dauerhaft gespeichert.
+- Oeffentliche Bewertungen 1 bis 5 werden bis zu 24 Monate gespeichert.
+- Fun-Meldungen werden bis zu 12 Monate gespeichert.
+- Warnmeldungen / Alarmmeldungen Stufe 6 werden bis zu 12 Monate gespeichert.
 - Login-Sitzungen, Missbrauchs-Cooldowns und veraltete Live-Teamstandorte werden weiterhin zeitlich bereinigt.
 
 Warum:
 
-- Bewertungen und Meldungen sollen spaeter ein Lagebild ergeben.
+- Oeffentliche Bewertungen 1 bis 5, Fun-Meldungen und Warnmeldungen / Alarmmeldungen Stufe 6 sollen spaeter ein Lagebild ergeben.
 - Personenbezogene Live-Daten sollen nicht laenger als notwendig vorgehalten werden.
 - Registrierte Alarmmeldungen bleiben nachvollziehbar: wer, wann, wo, was.
 
@@ -24,10 +24,10 @@ http://localhost:3000/api/data/export?type=all&format=json
 Alle Daten als CSV:
 http://localhost:3000/api/data/export?type=all&format=csv
 
-Nur anonyme oeffentliche Daten:
+Nur anonyme oeffentliche Daten aus oeffentlichen Bewertungen 1 bis 5 und Fun-Meldungen:
 http://localhost:3000/api/data/export?type=public&format=csv
 
-Nur registrierte Alarmmeldungen:
+Nur Warnmeldungen / Alarmmeldungen Stufe 6 aus dem registrierten Bereich:
 http://localhost:3000/api/data/export?type=registered&format=csv
 
 Erste Lagebild-Auswertung:

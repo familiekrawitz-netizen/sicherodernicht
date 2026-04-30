@@ -49,3 +49,5 @@ Domain:
 ## Wichtiger Hinweis
 
 Der aktuelle Stand ist ein Prototyp. Vor einem echten Livebetrieb muessen insbesondere Datenbank, Login-Sicherheit, Admin-Schutz, Datenschutz und Backups produktionsreif umgesetzt werden.
+
+Keine `.env.local` und keine echten Zugangsdaten in ZIP-Dateien weitergeben.
