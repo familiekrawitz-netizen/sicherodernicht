@@ -51,3 +51,4 @@ Domain:
 Der aktuelle Stand ist ein Prototyp. Vor einem echten Livebetrieb muessen insbesondere Datenbank, Login-Sicherheit, Admin-Schutz, Datenschutz und Backups produktionsreif umgesetzt werden.
 
 Keine `.env.local` und keine echten Zugangsdaten in ZIP-Dateien weitergeben.
+Beim Erstellen einer ZIP außerdem `.git`, `node_modules`, `data/store.json`, `data/reports.json`, `.DS_Store`, `__MACOSX` und alte ZIP-Dateien weglassen.

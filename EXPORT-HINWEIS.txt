@@ -1,0 +1,9 @@
+Beim Erstellen einer ZIP zur Weitergabe dürfen folgende Dateien und Ordner nicht enthalten sein:
+- .env.local
+- data/store.json
+- data/reports.json
+- .git
+- node_modules
+- .DS_Store
+- __MACOSX
+- alte ZIP-Dateien
